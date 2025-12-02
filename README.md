@@ -39,7 +39,8 @@ jobs:
 Liste todos os inputs com tabela (token, pr_number, header_, body_, footer_*).
 
 ## Outputs
-	•	comment_body: corpo final em Markdown, caso queira reutilizar em outro lugar.
+
+comment_body: corpo final em Markdown, caso queira reutilizar em outro lugar.
 
 ## Versão
 
