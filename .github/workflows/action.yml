@@ -1,0 +1,97 @@
+<!-- .github/workflows/action.yml -->
+
+name: "pr-comment"
+description: "Publica comentários padronizados em Pull Requests (header/body/footer)."
+
+inputs:
+  token:
+    description: "GitHub token (ex.: secrets.GITHUB_TOKEN)"
+    required: true
+  pr_number:
+    description: "Número da Pull Request a ser comentada"
+    required: true
+
+  header_actor:
+    description: "Autor da mensagem (ex.: github.actor)"
+    required: true
+  header_title:
+    description: "Título da mensagem"
+    required: true
+  header_subject:
+    description: "Assunto da mensagem"
+    required: true
+
+  body_message:
+    description: "Texto principal da mensagem"
+    required: true
+  body_scope:
+    description: "Escopo (lista/bullets)"
+    required: false
+    default: ""
+  body_todo:
+    description: "Ações pendentes / TODO"
+    required: false
+    default: ""
+
+  footer_result:
+    description: "Resumo do resultado"
+    required: false
+    default: ""
+  footer_advise:
+    description: "Orientação / próximos passos"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        set -euo pipefail
+
+        ACTOR="${{ inputs.header_actor }}"
+        TITLE="${{ inputs.header_title }}"
+        SUBJECT="${{ inputs.header_subject }}"
+
+        BODY_MESSAGE="${{ inputs.body_message }}"
+        BODY_SCOPE="${{ inputs.body_scope }}"
+        BODY_TODO="${{ inputs.body_todo }}"
+
+        FOOTER_RESULT="${{ inputs.footer_result }}"
+        FOOTER_ADVISE="${{ inputs.footer_advise }}"
+
+        TOKEN="${{ inputs.token }}"
+        REPO="${{ github.repository }}"
+        PR_NUMBER="${{ inputs.pr_number }}"
+
+        MSG="### ${TITLE}\n\n"
+        MSG+="Autor: @${ACTOR}\n"
+        MSG+="Assunto: ${SUBJECT}\n\n"
+
+        MSG+="${BODY_MESSAGE}\n\n"
+
+        if [ -n "${BODY_SCOPE}" ]; then
+          MSG+="**Escopo:**\n${BODY_SCOPE}\n\n"
+        fi
+
+        if [ -n "${BODY_TODO}" ]; then
+          MSG+="**Ações pendentes:**\n${BODY_TODO}\n\n"
+        fi
+
+        if [ -n "${FOOTER_RESULT}${FOOTER_ADVISE}" ]; then
+          MSG+="---\n"
+          if [ -n "${FOOTER_RESULT}" ]; then
+            MSG+="Resultado: ${FOOTER_RESULT}\n"
+          fi
+          if [ -n "${FOOTER_ADVISE}" ]; then
+            MSG+="Orientação: ${FOOTER_ADVISE}\n"
+          fi
+        fi
+
+        JSON_BODY="$(printf '%b' "${MSG}" | jq -Rs '{body: .}')"
+
+        curl -sS \
+          -H "Authorization: Bearer ${TOKEN}" \
+          -H "Accept: application/vnd.github+json" \
+          -X POST "https://api.github.com/repos/${REPO}/issues/${PR_NUMBER}/comments" \
+          -d "${JSON_BODY}" || true
