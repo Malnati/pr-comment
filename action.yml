@@ -1,4 +1,4 @@
-name: "pr-comment"
+name: "PR Comment Template"
 description: "Post standard, templated comments on Pull Requests (header/body/footer)."
 author: "Ricardo Malnati"
 
