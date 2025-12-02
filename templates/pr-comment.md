@@ -1,11 +1,10 @@
-<!-- templates/pr-comment.md -->
-### $TITLE
+### ${TITLE}
 
-Autor: @$ACTOR  
-Assunto: $SUBJECT
+Autor: @${ACTOR}
+Assunto: ${SUBJECT}
 
-$BODY_MESSAGE
+${BODY_MESSAGE}
 
-$BODY_SCOPE_BLOCK
-$BODY_TODO_BLOCK
-$FOOTER_BLOCK
+${BODY_SCOPE_BLOCK}
+${BODY_TODO_BLOCK}
+${FOOTER_BLOCK}

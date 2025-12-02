@@ -1,49 +1,53 @@
-# action.yml
 name: "pr-comment"
-description: "Publica comentários padronizados em Pull Requests (header/body/footer)."
+description: "Post standard, templated comments on Pull Requests (header/body/footer)."
+author: "Ricardo Malnati"
+
+branding:
+  icon: "message-circle"
+  color: "purple"
 
 inputs:
   token:
-    description: "GitHub token (ex.: secrets.GITHUB_TOKEN)"
+    description: "GitHub token (e.g., secrets.GITHUB_TOKEN)"
     required: true
   pr_number:
-    description: "Número da Pull Request a ser comentada"
+    description: "Pull Request number to comment on"
     required: true
 
   header_actor:
-    description: "Autor da mensagem (ex.: github.actor)"
+    description: "Message author (e.g., github.actor)"
     required: true
   header_title:
-    description: "Título da mensagem"
+    description: "Comment title"
     required: true
   header_subject:
-    description: "Assunto da mensagem"
+    description: "Comment subject"
     required: true
 
   body_message:
-    description: "Texto principal da mensagem"
+    description: "Main message body (Markdown)"
     required: true
   body_scope:
-    description: "Escopo (lista/bullets)"
+    description: "Scope bullets (Markdown list)"
     required: false
     default: ""
   body_todo:
-    description: "Ações pendentes / TODO"
+    description: "TODO / pending actions (Markdown list)"
     required: false
     default: ""
 
   footer_result:
-    description: "Resumo do resultado"
+    description: "Result summary"
     required: false
     default: ""
   footer_advise:
-    description: "Orientação / próximos passos"
+    description: "Advice / next steps"
     required: false
     default: ""
 
 outputs:
   comment_body:
-    description: "Corpo final do comentário em Markdown"
+    description: "Final comment body in Markdown"
     value: ${{ steps.build-message.outputs.comment_body }}
 
 runs:
