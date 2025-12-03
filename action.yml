@@ -202,10 +202,9 @@ runs:
           echo "$WARNING_MD"
           echo "EOF"
         } >> "$GITHUB_OUTPUT"
-
+        
     # ------------------------------------------------------------------
     # STEP 4: Montar Markdown Final (Envsubst)
-    # Responsabilidade: Ler template e substituir variáveis preparadas
     # ------------------------------------------------------------------
     - id: assemble_markdown
       shell: bash
@@ -215,12 +214,18 @@ runs:
         TITLE: ${{ inputs.header_title }}
         SUBJECT: ${{ inputs.header_subject }}
         BODY_MESSAGE: ${{ inputs.body_message }}
-        # Inputs processados (outputs dos steps anteriores)
+        # Inputs processados
         BODY_SCOPE_BLOCK: ${{ steps.fmt_scope.outputs.block }}
         BODY_TODO_BLOCK: ${{ steps.fmt_todo.outputs.block }}
         FOOTER_BLOCK: ${{ steps.fmt_footer.outputs.block }}
-        # Caminho
-        TEMPLATE_PATH: ${{ github.action_path }}/templates/pr-comment.md
+        
+        # --- CORREÇÃO AQUI ---
+        # Usar o caminho decidido pelo validador
+        TEMPLATE_PATH: ${{ steps.check_template.outputs.template_file }}
+        # Pegar o aviso de erro (caso exista)
+        WARNING_APPEND: ${{ steps.check_template.outputs.warning_msg }}
+        # ---------------------
+        
       run: |
         set -euo pipefail
 
@@ -229,10 +234,15 @@ runs:
           exit 1
         fi
 
-        # Export necessário para envsubst enxergar as variáveis
         export ACTOR TITLE SUBJECT BODY_MESSAGE BODY_SCOPE_BLOCK BODY_TODO_BLOCK FOOTER_BLOCK
 
         MARKDOWN_CONTENT=$(envsubst < "$TEMPLATE_PATH")
+
+        # --- ADICIONAR AVISO SE HOUVER ---
+        if [ -n "$WARNING_APPEND" ]; then
+          MARKDOWN_CONTENT="${MARKDOWN_CONTENT}${WARNING_APPEND}"
+        fi
+        # ---------------------------------
 
         {
           echo "markdown<<EOF"
