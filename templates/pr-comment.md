@@ -1,12 +1,28 @@
-### ${TITLE}
+<h2>${TITLE}</h2>
 
-Autor: @${ACTOR}
-Assunto: ${SUBJECT}
+| 👤 Initiator | 🏷️ Subject |
+| :--- | :--- |
+| <b>@${ACTOR}</b> | <code>${SUBJECT}</code> |
+
+<br>
 
 ${BODY_MESSAGE}
 
+<br>
+
 ${BODY_SCOPE_BLOCK}
+
 ${BODY_TODO_BLOCK}
+
 ${FOOTER_BLOCK}
 
-> 💬 This message was written automaticaly by Malnati/pr-comment@v4.0.1 🤍 using the default template. You can use your own ™ if required by your business. 
+<br>
+
+<hr>
+<div align="right">
+  <sub>
+    🤖 Automated by <a href="https://github.com/Malnati/pr-comment">Malnati/pr-comment</a> 🤍
+    <br>
+    <i>Need a different layout? <a href="https://github.com/Malnati/pr-comment#%EF%B8%8F-templates-customizados">Learn how to customize.</a></i>
+  </sub>
+</div>
