@@ -47,7 +47,7 @@ steps:
       token: ${{ secrets.GITHUB_TOKEN }}
       pr_number: ${{ github.event.pull_request.number }}
       header_actor: ${{ github.actor }}
-      header_title: "🔁 Auto-Sync"
+      header_title: "🧪 Testing default PR message"
       header_subject: "Sincronização de Branches"
       body_message: "A sincronização foi realizada com sucesso pelo bot."
       body_scope: |
