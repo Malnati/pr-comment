@@ -1,4 +1,4 @@
-# action.yml v4.1.5
+# Malnati/pr-comment@v5.0.0
 name: "PR Comment Template"
 description: "Post standard, templated comments on Pull Requests (header/body/footer)."
 author: "Ricardo Malnati"
@@ -15,7 +15,7 @@ inputs:
     description: "Pull Request number to comment on"
     required: true
   header_actor:
-    description: "Message author (e.g., github.actor)"
+    description: "Message author"
     required: true
   header_title:
     description: "Comment title"
@@ -27,115 +27,79 @@ inputs:
     description: "Main message body (Markdown)"
     required: true
   body_scope:
-    description: "Scope bullets (Markdown list)"
+    description: "Scope text (Raw)"
     required: false
     default: ""
   body_todo:
-    description: "TODO / pending actions (Markdown list)"
+    description: "TODO text (Raw)"
     required: false
     default: ""
   footer_result:
-    description: "Result summary"
+    description: "Result summary (Raw)"
     required: false
     default: ""
   footer_advise:
-    description: "Advice / next steps"
+    description: "Advice / next steps (Raw)"
     required: false
     default: ""
   template_path:
-    description: "Caminho relativo para um template Markdown personalizado"
+    description: "Path to custom Markdown template"
     required: false
     default: ""
     
 outputs:
   comment_body:
-    description: "Final comment body in Markdown"
+    description: "Final comment body"
     value: ${{ steps.assemble_markdown.outputs.markdown }}
 
 runs:
   using: "composite"
   steps:
     # ------------------------------------------------------------------
-    # STEP 1: Formatar Bloco de Escopo
-    # Responsabilidade: Verificar input e gerar HTML/Markdown específico
+    # STEP 1, 2 e 3: Pass-through (Sem alterações, mantém a limpeza)
     # ------------------------------------------------------------------
     - id: fmt_scope
       shell: bash
       env:
         RAW_SCOPE: ${{ inputs.body_scope }}
       run: |
-        set -euo pipefail
-        
-        FORMATTED=""
-        if [ -n "$RAW_SCOPE" ]; then
-           # Usamos printf para evitar problemas de formatação
-           FORMATTED=$(printf "**Escopo:**\n%s\n" "$RAW_SCOPE")
-        fi
+        echo "block<<EOF"
+        echo "$RAW_SCOPE"
+        echo "EOF" >> "$GITHUB_OUTPUT"
 
-        # Multiline output seguro
-        {
-          echo "block<<EOF"
-          echo "$FORMATTED"
-          echo "EOF"
-        } >> "$GITHUB_OUTPUT"
-
-    # ------------------------------------------------------------------
-    # STEP 2: Formatar Bloco de TODO
-    # Responsabilidade: Isolar lógica de pendências
-    # ------------------------------------------------------------------
     - id: fmt_todo
       shell: bash
       env:
         RAW_TODO: ${{ inputs.body_todo }}
       run: |
-        set -euo pipefail
+        echo "block<<EOF"
+        echo "$RAW_TODO"
+        echo "EOF" >> "$GITHUB_OUTPUT"
 
-        FORMATTED=""
-        if [ -n "$RAW_TODO" ]; then
-           FORMATTED=$(printf "**Ações pendentes:**\n%s\n" "$RAW_TODO")
-        fi
-
-        {
-          echo "block<<EOF"
-          echo "$FORMATTED"
-          echo "EOF"
-        } >> "$GITHUB_OUTPUT"
-
-    # ------------------------------------------------------------------
-    # STEP 3: Formatar Rodapé
-    # Responsabilidade: Lógica condicional complexa do rodapé
-    # ------------------------------------------------------------------
     - id: fmt_footer
       shell: bash
       env:
         RES: ${{ inputs.footer_result }}
         ADV: ${{ inputs.footer_advise }}
       run: |
-        set -euo pipefail
-
         FORMATTED=""
-        # Concatena para verificar se algum existe
-        if [ -n "${RES}${ADV}" ]; then
-          FORMATTED="---"
-          
-          if [ -n "$RES" ]; then
-            FORMATTED="${FORMATTED}\nResultado: ${RES}"
-          fi
-          
-          if [ -n "$ADV" ]; then
-            FORMATTED="${FORMATTED}\nOrientação: ${ADV}"
-          fi
+        if [ -n "$RES" ]; then
+           FORMATTED="$RES"
         fi
-
-        {
-          echo "block<<EOF"
-          echo "$FORMATTED"
-          echo "EOF"
-        } >> "$GITHUB_OUTPUT"
+        if [ -n "$ADV" ]; then
+           if [ -n "$FORMATTED" ]; then
+              FORMATTED="${FORMATTED}<br>${ADV}"
+           else
+              FORMATTED="$ADV"
+           fi
+        fi
+        echo "block<<EOF"
+        echo "$FORMATTED"
+        echo "EOF" >> "$GITHUB_OUTPUT"
 
     # ------------------------------------------------------------------
-    # STEP 3.5: Validar Template Personalizado (NOVO)
-    # Responsabilidade: Checar placeholders e definir qual arquivo usar
+    # STEP 3.5: Validar Template (LOGS APENAS)
+    # Mudança: Usamos ::warning:: em vez de injetar texto no output.
     # ------------------------------------------------------------------
     - id: check_template
       shell: bash
@@ -145,139 +109,77 @@ runs:
       run: |
         set -euo pipefail
 
-        # Variáveis obrigatórias para o envsubst (formato $NOME)
-        REQUIRED_VARS=("ACTOR" "SUBJECT" "BODY_MESSAGE" "BODY_SCOPE_BLOCK" "BODY_TODO_BLOCK" "FOOTER_BLOCK")
-        
+        REQUIRED_VARS=("BODY_MESSAGE")
         FINAL_TEMPLATE="$DEFAULT_PATH"
-        WARNING_MD=""
 
-        # Se não foi passado template customizado, segue o baile com o padrão
+        # 1. Sem template customizado -> Usa Default (Normal)
         if [ -z "$CUSTOM_PATH" ]; then
-          echo "No custom template provided. Using default."
+          echo "Using default template."
         
-        # Se foi passado, mas arquivo não existe
+        # 2. Template não existe -> Aviso no Log + Fallback
         elif [ ! -f "$CUSTOM_PATH" ]; then
-          echo "::error::Custom template not found at '$CUSTOM_PATH'. Falling back to default."
+          echo "::warning title=Template Not Found::O arquivo '$CUSTOM_PATH' não foi encontrado. Usando template padrão."
           FINAL_TEMPLATE="$DEFAULT_PATH"
-          WARNING_MD=$'\n\n> [!WARNING]\n> **Action Setup Warning**: O template personalizado informado não foi encontrado. O template padrão foi utilizado.'
 
-        # Se arquivo existe, validar placeholders
+        # 3. Validação de placeholders -> Aviso no Log + Fallback
         else
-          echo "Validating custom template: $CUSTOM_PATH"
           MISSING=()
-          PRESENT=()
-
           for VAR in "${REQUIRED_VARS[@]}"; do
-            # Grep procura pela string literal $VAR (ex: $ACTOR)
-            if grep -Fq "\${$VAR}" "$CUSTOM_PATH" || grep -Fq "\$$VAR" "$CUSTOM_PATH"; then
-              PRESENT+=("$VAR")
-            else
-              MISSING+=("$VAR")
+            if ! grep -Fq "\${$VAR}" "$CUSTOM_PATH" && ! grep -Fq "\$$VAR" "$CUSTOM_PATH"; then
+               MISSING+=("$VAR")
             fi
           done
 
-          # Se houver itens faltando
           if [ ${#MISSING[@]} -gt 0 ]; then
-            # Junta arrays em strings para o log
             MISSING_STR=$(IFS=', '; echo "${MISSING[*]}")
-            PRESENT_STR=$(IFS=', '; echo "${PRESENT[*]}")
-
-            echo "::error::Template Validation Failed! The following placeholders are missing: [$MISSING_STR]. Present: [$PRESENT_STR]. Falling back to default."
-            
+            echo "::warning title=Invalid Template::O template personalizado falhou na validação. Faltam: [$MISSING_STR]. Usando padrão."
             FINAL_TEMPLATE="$DEFAULT_PATH"
-            WARNING_MD=$'\n\n> [!WARNING]\n> **Action Setup Warning**: O template personalizado falhou na validação.\n> **Ausentes:** `'"$MISSING_STR"'`\n> Verifique os logs da Action para corrigir e tentar novamente.'
           else
-            echo "Template validation passed!"
+            echo "Template validado com sucesso."
             FINAL_TEMPLATE="$CUSTOM_PATH"
           fi
         fi
 
-        echo "Selected template: $FINAL_TEMPLATE"
-
-        # Outputs para o próximo step
         echo "template_file=$FINAL_TEMPLATE" >> "$GITHUB_OUTPUT"
-        
-        # Multiline para o aviso
-        {
-          echo "warning_msg<<EOF"
-          echo "$WARNING_MD"
-          echo "EOF"
-        } >> "$GITHUB_OUTPUT"
 
     # ------------------------------------------------------------------
-    # STEP 4: Montar Markdown Final (Envsubst)
+    # STEP 4: Montar Markdown Final
+    # Mudança: Removemos a lógica de WARNING_APPEND.
     # ------------------------------------------------------------------
     - id: assemble_markdown
       shell: bash
       env:
-        # Inputs de conteúdo (Texto)
         ACTOR: ${{ inputs.header_actor }}
         TITLE: ${{ inputs.header_title }}
         SUBJECT: ${{ inputs.header_subject }}
         BODY_MESSAGE: ${{ inputs.body_message }}
-        
-        # Inputs crus (HTML/Markdown já formatado pelo caller)
-        RAW_SCOPE: ${{ inputs.body_scope }}
-        RAW_TODO: ${{ inputs.body_todo }}
-        RAW_RES: ${{ inputs.footer_result }}
-        RAW_ADV: ${{ inputs.footer_advise }}
-        
-        # --- CORREÇÃO CRÍTICA AQUI ---
-        # Devemos usar o output do Step 3.5 (check_template), pois ele
-        # contém o caminho resolvido (default vs custom) e validado.
+        RAW_SCOPE: ${{ steps.fmt_scope.outputs.block }}
+        RAW_TODO: ${{ steps.fmt_todo.outputs.block }}
+        RAW_FOOTER: ${{ steps.fmt_footer.outputs.block }}
         TEMPLATE_PATH: ${{ steps.check_template.outputs.template_file }}
-        
-        # Também precisamos mapear o aviso de erro, caso exista
-        WARNING_APPEND: ${{ steps.check_template.outputs.warning_msg }}
-        # -----------------------------
-
       run: |
         set -euo pipefail
 
-        # Verifica se o arquivo existe (Segurança extra)
         if [ ! -f "$TEMPLATE_PATH" ]; then
-          echo "::error::Critical: Template path is empty or invalid inside assembler."
+          echo "::error::Critical: Template path invalido."
           exit 1
         fi
 
-        # Lógica de Rodapé "Dumb" (Apenas junta strings se existirem)
-        FOOTER_COMBINED=""
-        if [ -n "$RAW_RES" ]; then
-           FOOTER_COMBINED="$RAW_RES"
-        fi
-        
-        if [ -n "$RAW_ADV" ]; then
-           if [ -n "$FOOTER_COMBINED" ]; then
-              FOOTER_COMBINED="${FOOTER_COMBINED}<br>${RAW_ADV}"
-           else
-              FOOTER_COMBINED="$RAW_ADV"
-           fi
-        fi
-
-        # Export para envsubst
         export ACTOR TITLE SUBJECT BODY_MESSAGE
-        # Mapeamos os inputs crus para as variáveis que o template espera
         export BODY_SCOPE_BLOCK="$RAW_SCOPE"
         export BODY_TODO_BLOCK="$RAW_TODO"
-        export FOOTER_BLOCK="$FOOTER_COMBINED"
+        export FOOTER_BLOCK="$RAW_FOOTER"
 
-        # Executa a substituição
+        # Apenas substitui e salva. Se houve erro de template,
+        # o usuário verá nos logs da Action, não no texto da PR.
         MARKDOWN_CONTENT=$(envsubst < "$TEMPLATE_PATH")
 
-        # Anexa aviso de validação (se o template customizado falhou no step anterior)
-        if [ -n "$WARNING_APPEND" ]; then
-          MARKDOWN_CONTENT="${MARKDOWN_CONTENT}${WARNING_APPEND}"
-        fi
-
-        {
-          echo "markdown<<EOF"
-          echo "$MARKDOWN_CONTENT"
-          echo "EOF"
-        } >> "$GITHUB_OUTPUT"
+        echo "markdown<<EOF"
+        echo "$MARKDOWN_CONTENT"
+        echo "EOF" >> "$GITHUB_OUTPUT"
         
     # ------------------------------------------------------------------
-    # STEP 5: Preparar Payload JSON
-    # Responsabilidade: Escapar JSON corretamente (usando jq para segurança)
+    # STEP 5: Preparar JSON
     # ------------------------------------------------------------------
     - id: prepare_json
       shell: bash
@@ -285,19 +187,14 @@ runs:
         CONTENT: ${{ steps.assemble_markdown.outputs.markdown }}
       run: |
         set -euo pipefail
-
-        # jq -R (raw input) -s (slurp) trata tudo como string única e escapa corretamente
         JSON_PAYLOAD=$(printf '%s' "$CONTENT" | jq -Rs '{body: .}')
 
-        {
-          echo "payload<<EOF"
-          echo "$JSON_PAYLOAD"
-          echo "EOF"
-        } >> "$GITHUB_OUTPUT"
+        echo "payload<<EOF"
+        echo "$JSON_PAYLOAD"
+        echo "EOF" >> "$GITHUB_OUTPUT"
 
     # ------------------------------------------------------------------
-    # STEP 6: Executar Request (Curl)
-    # Responsabilidade: Apenas transporte de dados
+    # STEP 6: Request
     # ------------------------------------------------------------------
     - id: post_comment
       shell: bash
@@ -308,10 +205,7 @@ runs:
         JSON_DATA: ${{ steps.prepare_json.outputs.payload }}
       run: |
         set -euo pipefail
-
         URL="https://api.github.com/repos/$REPO/issues/$PR_NUM/comments"
-        
-        echo "Posting comment to $URL..."
         
         HTTP_CODE=$(curl -sS -w "%{http_code}" -o response.json \
           -H "Authorization: Bearer $TOKEN" \
@@ -324,5 +218,5 @@ runs:
           cat response.json
           exit 1
         else
-          echo "Comment posted successfully (HTTP $HTTP_CODE)."
+          echo "Comment posted successfully."
         fi
