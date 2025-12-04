@@ -203,38 +203,49 @@ runs:
           echo "$WARNING_MD"
           echo "EOF"
         } >> "$GITHUB_OUTPUT"
-        
+
     # ------------------------------------------------------------------
     # STEP 4: Montar Markdown Final (Envsubst)
     # ------------------------------------------------------------------
     - id: assemble_markdown
       shell: bash
       env:
-        # Inputs Diretos
+        # Inputs de conteúdo (Texto)
         ACTOR: ${{ inputs.header_actor }}
         TITLE: ${{ inputs.header_title }}
         SUBJECT: ${{ inputs.header_subject }}
         BODY_MESSAGE: ${{ inputs.body_message }}
         
-        # Inputs que antes eram processados, agora são crus (RAW)
-        # O caller (flow-check) que se vire para mandar <ul><li> se quiser.
+        # Inputs crus (HTML/Markdown já formatado pelo caller)
         RAW_SCOPE: ${{ inputs.body_scope }}
         RAW_TODO: ${{ inputs.body_todo }}
         RAW_RES: ${{ inputs.footer_result }}
         RAW_ADV: ${{ inputs.footer_advise }}
         
-        TEMPLATE_PATH: ${{ inputs.template_path }} # Assumindo que você já implementou a lógica de path aqui ou no caller
+        # --- CORREÇÃO CRÍTICA AQUI ---
+        # Devemos usar o output do Step 3.5 (check_template), pois ele
+        # contém o caminho resolvido (default vs custom) e validado.
+        TEMPLATE_PATH: ${{ steps.check_template.outputs.template_file }}
+        
+        # Também precisamos mapear o aviso de erro, caso exista
+        WARNING_APPEND: ${{ steps.check_template.outputs.warning_msg }}
+        # -----------------------------
+
       run: |
         set -euo pipefail
 
-        # Lógica de fallback do template path omitida para brevidade...
+        # Verifica se o arquivo existe (Segurança extra)
+        if [ ! -f "$TEMPLATE_PATH" ]; then
+          echo "::error::Critical: Template path is empty or invalid inside assembler."
+          exit 1
+        fi
 
-        # PREPARAÇÃO MÍNIMA (Apenas garantindo que variáveis existam)
-        # Se footer_result e advise existirem, juntamos com <br>, mas SEM labels "Resultado:"
+        # Lógica de Rodapé "Dumb" (Apenas junta strings se existirem)
         FOOTER_COMBINED=""
         if [ -n "$RAW_RES" ]; then
            FOOTER_COMBINED="$RAW_RES"
         fi
+        
         if [ -n "$RAW_ADV" ]; then
            if [ -n "$FOOTER_COMBINED" ]; then
               FOOTER_COMBINED="${FOOTER_COMBINED}<br>${RAW_ADV}"
@@ -245,25 +256,25 @@ runs:
 
         # Export para envsubst
         export ACTOR TITLE SUBJECT BODY_MESSAGE
-        # Mapeamos para os nomes que o template espera
+        # Mapeamos os inputs crus para as variáveis que o template espera
         export BODY_SCOPE_BLOCK="$RAW_SCOPE"
         export BODY_TODO_BLOCK="$RAW_TODO"
         export FOOTER_BLOCK="$FOOTER_COMBINED"
 
+        # Executa a substituição
         MARKDOWN_CONTENT=$(envsubst < "$TEMPLATE_PATH")
 
-        # --- ADICIONAR AVISO SE HOUVER ---
+        # Anexa aviso de validação (se o template customizado falhou no step anterior)
         if [ -n "$WARNING_APPEND" ]; then
           MARKDOWN_CONTENT="${MARKDOWN_CONTENT}${WARNING_APPEND}"
         fi
-        # ---------------------------------
 
         {
           echo "markdown<<EOF"
           echo "$MARKDOWN_CONTENT"
           echo "EOF"
         } >> "$GITHUB_OUTPUT"
-
+        
     # ------------------------------------------------------------------
     # STEP 5: Preparar Payload JSON
     # Responsabilidade: Escapar JSON corretamente (usando jq para segurança)
