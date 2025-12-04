@@ -1,4 +1,4 @@
-# Malnati/pr-comment@v6.0.1
+# Malnati/pr-comment@v6.1.0
 name: "PR Comment Template"
 description: "Post standard, templated comments on Pull Requests with Sticky mode support."
 author: "Ricardo Malnati"
@@ -54,6 +54,90 @@ inputs:
 runs:
   using: "composite"
   steps:
+    # ------------------------------------------------------------------
+    # STEP 0: DIAGNÓSTICO DE INPUTS (Log Rico)
+    # ------------------------------------------------------------------
+    - id: debug_inputs
+      shell: bash
+      env:
+        PR_NUM: ${{ inputs.pr_number }}
+        MSG_ID: ${{ inputs.message_id }}
+        TPL_PATH: ${{ inputs.template_path }}
+        # Verificando presença de conteúdo opcional
+        HAS_SCOPE: ${{ inputs.body_scope }}
+        HAS_TODO: ${{ inputs.body_todo }}
+        HAS_RES: ${{ inputs.footer_result }}
+      run: |
+        echo "::group::🔍 Step 0: Input Configuration Analysis"
+        echo "---------------------------------------------------------------"
+        echo "🎯 Target Pull Request: #$PR_NUM"
+        echo "---------------------------------------------------------------"
+        
+        # 1. Analisa Sticky Mode
+        if [ -n "$MSG_ID" ]; then
+           echo "✅ Sticky Mode: ENABLED"
+           echo "   🔹 ID: '$MSG_ID'"
+           echo "   👉 Consequência: A Action buscará um comentário existente com este ID."
+           echo "      - Se encontrar: Executa PATCH (Atualiza)."
+           echo "      - Se não encontrar: Executa POST (Cria novo)."
+        else
+           echo "⚪ Sticky Mode: DISABLED (Input 'message_id' is empty)"
+           echo "   👉 Consequência: A Action sempre executará POST (Criará um novo comentário)."
+           echo "      Isso pode gerar spam se o workflow rodar múltiplas vezes."
+        fi
+        echo "---------------------------------------------------------------"
+
+        # 2. Analisa Template
+        if [ -n "$TPL_PATH" ]; then
+           echo "📝 Template: CUSTOM"
+           echo "   🔹 Path: '$TPL_PATH'"
+           echo "   👉 Consequência: O layout será renderizado usando seu arquivo."
+        else
+           echo "📄 Template: DEFAULT"
+           echo "   👉 Consequência: Usando layout padrão embutido na Action."
+        fi
+        echo "---------------------------------------------------------------"
+
+        # 3. Resumo de Conteúdo
+        echo "📦 Content Blocks:"
+        [ -n "$HAS_SCOPE" ] && echo "   - Scope: Present" || echo "   - Scope: Empty (Skipped)"
+        [ -n "$HAS_TODO" ]  && echo "   - Todo:  Present" || echo "   - Todo:  Empty (Skipped)"
+        [ -n "$HAS_RES" ]   && echo "   - Footer: Present" || echo "   - Footer: Empty (Skipped)"
+        
+        echo "::endgroup::"
+
+    # ------------------------------------------------------------------
+    # STEP 0.5: VERIFICAÇÃO DE PERMISSÕES (Token Probe)
+    # ------------------------------------------------------------------
+    - id: debug_perms
+      shell: bash
+      env:
+        TOKEN: ${{ inputs.token }}
+      run: |
+        echo "::group::🔐 Step 0.5: Token Permission Check"
+        
+        # Faz um request HEAD para checar conectividade e headers
+        # O GitHub Actions TOKEN nem sempre retorna x-oauth-scopes, mas validamos a conexão
+        RESPONSE=$(curl -s -I -w "%{http_code}" -H "Authorization: Bearer $TOKEN" https://api.github.com/rate_limit)
+        HTTP_CODE=${RESPONSE: -3}
+        
+        echo "📡 API Connectivity Check:"
+        if [ "$HTTP_CODE" == "200" ]; then
+           echo "   ✅ Status 200 OK - Token aceito pela API."
+        else
+           echo "   ⚠️ Status $HTTP_CODE - Token pode ser inválido ou ter restrições de rede."
+        fi
+        
+        echo ""
+        echo "📋 REQUIRED PERMISSIONS (Lembrete):"
+        echo "   Para esta Action funcionar, o token deve ter:"
+        echo "   1. pull-requests: write  (Para postar/editar comentários)"
+        echo "   2. issues: write         (Fallback em alguns repos)"
+        echo "   3. contents: read        (Para ler o arquivo de template)"
+        echo ""
+        echo "   Se você receber erro 403 (Resource not accessible), verifique seu workflow YAML."
+        echo "::endgroup::"
+
     # ------------------------------------------------------------------
     # STEP 1: Validar Template
     # ------------------------------------------------------------------
@@ -166,7 +250,6 @@ runs:
            echo "Buscando comentário existente com ID: $MSG_ID..."
            
            # Busca comentários (limitado a 100 para performance)
-           # CORREÇÃO: O jq agora busca a string exata ""
            EXISTING_ID=$(curl -s -H "Authorization: Bearer $TOKEN" \
              "https://api.github.com/repos/$REPO/issues/$PR_NUM/comments?per_page=100" \
              | jq -r ".[] | select(.body | contains(\"\")) | .id" | head -n 1)

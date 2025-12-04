@@ -1,7 +1,7 @@
 # ${TITLE}
 
-> 👤 @${ACTOR}
-> 🏷️ ${SUBJECT}
+###### 👤 @${ACTOR}
+###### 🏷️ ${SUBJECT}
 
 <div align="right">
   <sub>
