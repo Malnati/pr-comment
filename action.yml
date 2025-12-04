@@ -136,7 +136,6 @@ runs:
 
         # 4. Injetar ID Oculto (Se existir) no TOPO do arquivo final
         if [ -n "$MSG_ID" ]; then
-           # CORREÇÃO: Inserir o ID real no comentário HTML
            echo "" > /tmp/final_message.md
            cat /tmp/content_raw.md >> /tmp/final_message.md
            echo "Sticky ID '$MSG_ID' injetado no markdown."
