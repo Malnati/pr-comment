@@ -1,4 +1,4 @@
-# Malnati/pr-comment@v6.0.0
+# Malnati/pr-comment@v6.0.1
 name: "PR Comment Template"
 description: "Post standard, templated comments on Pull Requests with Sticky mode support."
 author: "Ricardo Malnati"
@@ -46,9 +46,8 @@ inputs:
     description: "Path to custom Markdown template"
     required: false
     default: ""
-  # NOVO INPUT
   message_id:
-    description: "Unique ID (hidden) to enable Sticky Comments (Update existing instead of create new)"
+    description: "Unique ID (hidden) to enable Sticky Comments"
     required: false
     default: ""
 
@@ -79,16 +78,13 @@ runs:
                MISSING+=("$VAR")
             fi
           done
-
           if [ ${#MISSING[@]} -gt 0 ]; then
             MISSING_STR=$(IFS=', '; echo "${MISSING[*]}")
             echo "::warning title=Invalid Template::Template inválido. Faltam: [$MISSING_STR]. Usando padrão."
           else
-            echo "Template validado."
             FINAL_TEMPLATE="$CUSTOM_PATH"
           fi
         fi
-        
         echo "template_file=$FINAL_TEMPLATE" >> "$GITHUB_OUTPUT"
 
     # ------------------------------------------------------------------
@@ -107,7 +103,6 @@ runs:
         IN_RES: ${{ inputs.footer_result }}
         IN_ADV: ${{ inputs.footer_advise }}
         TEMPLATE_PATH: ${{ steps.check_template.outputs.template_file }}
-        # Novo Input
         MSG_ID: ${{ inputs.message_id }}
       run: |
         set -euo pipefail
@@ -141,6 +136,7 @@ runs:
 
         # 4. Injetar ID Oculto (Se existir) no TOPO do arquivo final
         if [ -n "$MSG_ID" ]; then
+           # CORREÇÃO: Inserir o ID real no comentário HTML
            echo "" > /tmp/final_message.md
            cat /tmp/content_raw.md >> /tmp/final_message.md
            echo "Sticky ID '$MSG_ID' injetado no markdown."
@@ -171,13 +167,13 @@ runs:
            echo "Buscando comentário existente com ID: $MSG_ID..."
            
            # Busca comentários (limitado a 100 para performance)
-           # jq filtra procurando a string no body
+           # CORREÇÃO: O jq agora busca a string exata ""
            EXISTING_ID=$(curl -s -H "Authorization: Bearer $TOKEN" \
              "https://api.github.com/repos/$REPO/issues/$PR_NUM/comments?per_page=100" \
              | jq -r ".[] | select(.body | contains(\"\")) | .id" | head -n 1)
 
            if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
-              # Se achou, muda para UPDATE (PATCH) na URL específica do comentário
+              # Se achou, muda para UPDATE (PATCH)
               TARGET_URL="https://api.github.com/repos/$REPO/issues/comments/$EXISTING_ID"
               HTTP_METHOD="PATCH"
               LOG_MSG="Atualizando comentário ID $EXISTING_ID..."
@@ -211,7 +207,6 @@ runs:
         LOG: ${{ steps.resolve_action.outputs.log }}
       run: |
         set -euo pipefail
-        
         echo "$LOG"
         
         HTTP_CODE=$(curl -sS -w "%{http_code}" -o response.json \
