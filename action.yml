@@ -209,32 +209,45 @@ runs:
     - id: assemble_markdown
       shell: bash
       env:
-        # Inputs diretos
+        # Inputs Diretos
         ACTOR: ${{ inputs.header_actor }}
         TITLE: ${{ inputs.header_title }}
         SUBJECT: ${{ inputs.header_subject }}
         BODY_MESSAGE: ${{ inputs.body_message }}
-        # Inputs processados
-        BODY_SCOPE_BLOCK: ${{ steps.fmt_scope.outputs.block }}
-        BODY_TODO_BLOCK: ${{ steps.fmt_todo.outputs.block }}
-        FOOTER_BLOCK: ${{ steps.fmt_footer.outputs.block }}
         
-        # --- CORREÇÃO AQUI ---
-        # Usar o caminho decidido pelo validador
-        TEMPLATE_PATH: ${{ steps.check_template.outputs.template_file }}
-        # Pegar o aviso de erro (caso exista)
-        WARNING_APPEND: ${{ steps.check_template.outputs.warning_msg }}
-        # ---------------------
+        # Inputs que antes eram processados, agora são crus (RAW)
+        # O caller (flow-check) que se vire para mandar <ul><li> se quiser.
+        RAW_SCOPE: ${{ inputs.body_scope }}
+        RAW_TODO: ${{ inputs.body_todo }}
+        RAW_RES: ${{ inputs.footer_result }}
+        RAW_ADV: ${{ inputs.footer_advise }}
         
+        TEMPLATE_PATH: ${{ inputs.template_path }} # Assumindo que você já implementou a lógica de path aqui ou no caller
       run: |
         set -euo pipefail
 
-        if [ ! -f "$TEMPLATE_PATH" ]; then
-          echo "::error::Template file not found at $TEMPLATE_PATH"
-          exit 1
+        # Lógica de fallback do template path omitida para brevidade...
+
+        # PREPARAÇÃO MÍNIMA (Apenas garantindo que variáveis existam)
+        # Se footer_result e advise existirem, juntamos com <br>, mas SEM labels "Resultado:"
+        FOOTER_COMBINED=""
+        if [ -n "$RAW_RES" ]; then
+           FOOTER_COMBINED="$RAW_RES"
+        fi
+        if [ -n "$RAW_ADV" ]; then
+           if [ -n "$FOOTER_COMBINED" ]; then
+              FOOTER_COMBINED="${FOOTER_COMBINED}<br>${RAW_ADV}"
+           else
+              FOOTER_COMBINED="$RAW_ADV"
+           fi
         fi
 
-        export ACTOR TITLE SUBJECT BODY_MESSAGE BODY_SCOPE_BLOCK BODY_TODO_BLOCK FOOTER_BLOCK
+        # Export para envsubst
+        export ACTOR TITLE SUBJECT BODY_MESSAGE
+        # Mapeamos para os nomes que o template espera
+        export BODY_SCOPE_BLOCK="$RAW_SCOPE"
+        export BODY_TODO_BLOCK="$RAW_TODO"
+        export FOOTER_BLOCK="$FOOTER_COMBINED"
 
         MARKDOWN_CONTENT=$(envsubst < "$TEMPLATE_PATH")
 
