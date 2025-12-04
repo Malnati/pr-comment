@@ -1,4 +1,4 @@
-# Malnati/pr-comment@v5.0.0
+# Malnati/pr-comment@v5.0.1
 name: "PR Comment Template"
 description: "Post standard, templated comments on Pull Requests (header/body/footer)."
 author: "Ricardo Malnati"
@@ -9,10 +9,10 @@ branding:
 
 inputs:
   token:
-    description: "GitHub token (e.g., secrets.GITHUB_TOKEN)"
+    description: "GitHub token"
     required: true
   pr_number:
-    description: "Pull Request number to comment on"
+    description: "PR number"
     required: true
   header_actor:
     description: "Message author"
@@ -24,82 +24,34 @@ inputs:
     description: "Comment subject"
     required: true
   body_message:
-    description: "Main message body (Markdown)"
+    description: "Main message body"
     required: true
   body_scope:
-    description: "Scope text (Raw)"
+    description: "Scope text"
     required: false
     default: ""
   body_todo:
-    description: "TODO text (Raw)"
+    description: "TODO text"
     required: false
     default: ""
   footer_result:
-    description: "Result summary (Raw)"
+    description: "Result summary"
     required: false
     default: ""
   footer_advise:
-    description: "Advice / next steps (Raw)"
+    description: "Advice / next steps"
     required: false
     default: ""
   template_path:
     description: "Path to custom Markdown template"
     required: false
     default: ""
-    
-outputs:
-  comment_body:
-    description: "Final comment body"
-    value: ${{ steps.assemble_markdown.outputs.markdown }}
 
 runs:
   using: "composite"
   steps:
     # ------------------------------------------------------------------
-    # STEP 1, 2 e 3: Pass-through (Sem alterações, mantém a limpeza)
-    # ------------------------------------------------------------------
-    - id: fmt_scope
-      shell: bash
-      env:
-        RAW_SCOPE: ${{ inputs.body_scope }}
-      run: |
-        echo "block<<EOF"
-        echo "$RAW_SCOPE"
-        echo "EOF" >> "$GITHUB_OUTPUT"
-
-    - id: fmt_todo
-      shell: bash
-      env:
-        RAW_TODO: ${{ inputs.body_todo }}
-      run: |
-        echo "block<<EOF"
-        echo "$RAW_TODO"
-        echo "EOF" >> "$GITHUB_OUTPUT"
-
-    - id: fmt_footer
-      shell: bash
-      env:
-        RES: ${{ inputs.footer_result }}
-        ADV: ${{ inputs.footer_advise }}
-      run: |
-        FORMATTED=""
-        if [ -n "$RES" ]; then
-           FORMATTED="$RES"
-        fi
-        if [ -n "$ADV" ]; then
-           if [ -n "$FORMATTED" ]; then
-              FORMATTED="${FORMATTED}<br>${ADV}"
-           else
-              FORMATTED="$ADV"
-           fi
-        fi
-        echo "block<<EOF"
-        echo "$FORMATTED"
-        echo "EOF" >> "$GITHUB_OUTPUT"
-
-    # ------------------------------------------------------------------
-    # STEP 3.5: Validar Template (LOGS APENAS)
-    # Mudança: Usamos ::warning:: em vez de injetar texto no output.
+    # STEP 1: Validar Template (Logs apenas)
     # ------------------------------------------------------------------
     - id: check_template
       shell: bash
@@ -108,20 +60,14 @@ runs:
         DEFAULT_PATH: ${{ github.action_path }}/templates/pr-comment.md
       run: |
         set -euo pipefail
-
         REQUIRED_VARS=("BODY_MESSAGE")
         FINAL_TEMPLATE="$DEFAULT_PATH"
 
-        # 1. Sem template customizado -> Usa Default (Normal)
         if [ -z "$CUSTOM_PATH" ]; then
           echo "Using default template."
-        
-        # 2. Template não existe -> Aviso no Log + Fallback
         elif [ ! -f "$CUSTOM_PATH" ]; then
-          echo "::warning title=Template Not Found::O arquivo '$CUSTOM_PATH' não foi encontrado. Usando template padrão."
+          echo "::warning title=Template Not Found::Arquivo '$CUSTOM_PATH' não encontrado. Usando padrão."
           FINAL_TEMPLATE="$DEFAULT_PATH"
-
-        # 3. Validação de placeholders -> Aviso no Log + Fallback
         else
           MISSING=()
           for VAR in "${REQUIRED_VARS[@]}"; do
@@ -132,30 +78,34 @@ runs:
 
           if [ ${#MISSING[@]} -gt 0 ]; then
             MISSING_STR=$(IFS=', '; echo "${MISSING[*]}")
-            echo "::warning title=Invalid Template::O template personalizado falhou na validação. Faltam: [$MISSING_STR]. Usando padrão."
+            echo "::warning title=Invalid Template::Template inválido. Faltam: [$MISSING_STR]. Usando padrão."
             FINAL_TEMPLATE="$DEFAULT_PATH"
           else
-            echo "Template validado com sucesso."
+            echo "Template validado."
             FINAL_TEMPLATE="$CUSTOM_PATH"
           fi
         fi
-
+        
+        # Output simples (single line) não precisa de heredoc
         echo "template_file=$FINAL_TEMPLATE" >> "$GITHUB_OUTPUT"
 
     # ------------------------------------------------------------------
-    # STEP 4: Montar Markdown Final
-    # Mudança: Removemos a lógica de WARNING_APPEND.
+    # STEP 2: Montar Markdown Final (Usando DISCO em vez de Output)
     # ------------------------------------------------------------------
     - id: assemble_markdown
       shell: bash
       env:
+        # Inputs diretos (Eliminando steps intermediários)
         ACTOR: ${{ inputs.header_actor }}
         TITLE: ${{ inputs.header_title }}
         SUBJECT: ${{ inputs.header_subject }}
         BODY_MESSAGE: ${{ inputs.body_message }}
-        RAW_SCOPE: ${{ steps.fmt_scope.outputs.block }}
-        RAW_TODO: ${{ steps.fmt_todo.outputs.block }}
-        RAW_FOOTER: ${{ steps.fmt_footer.outputs.block }}
+        RAW_SCOPE: ${{ inputs.body_scope }}
+        RAW_TODO: ${{ inputs.body_todo }}
+        # Inputs para lógica do rodapé
+        IN_RES: ${{ inputs.footer_result }}
+        IN_ADV: ${{ inputs.footer_advise }}
+        # Caminho do template resolvido
         TEMPLATE_PATH: ${{ steps.check_template.outputs.template_file }}
       run: |
         set -euo pipefail
@@ -165,36 +115,47 @@ runs:
           exit 1
         fi
 
+        # 1. Lógica do Rodapé (Movida para cá para evitar step extra)
+        FOOTER_BLOCK=""
+        if [ -n "$IN_RES" ]; then
+           FOOTER_BLOCK="$IN_RES"
+        fi
+        if [ -n "$IN_ADV" ]; then
+           if [ -n "$FOOTER_BLOCK" ]; then
+              FOOTER_BLOCK="${FOOTER_BLOCK}<br>${IN_ADV}"
+           else
+              FOOTER_BLOCK="$IN_ADV"
+           fi
+        fi
+
+        # 2. Exportar variáveis para o envsubst
         export ACTOR TITLE SUBJECT BODY_MESSAGE
         export BODY_SCOPE_BLOCK="$RAW_SCOPE"
         export BODY_TODO_BLOCK="$RAW_TODO"
-        export FOOTER_BLOCK="$RAW_FOOTER"
+        export FOOTER_BLOCK="$FOOTER_BLOCK"
 
-        # Apenas substitui e salva. Se houve erro de template,
-        # o usuário verá nos logs da Action, não no texto da PR.
-        MARKDOWN_CONTENT=$(envsubst < "$TEMPLATE_PATH")
-
-        echo "markdown<<EOF"
-        echo "$MARKDOWN_CONTENT"
-        echo "EOF" >> "$GITHUB_OUTPUT"
+        # 3. Substituir e SALVAR EM DISCO (/tmp)
+        # Isso evita completamente erros de EOF ou caracteres especiais no GITHUB_OUTPUT
+        envsubst < "$TEMPLATE_PATH" > /tmp/final_message.md
         
+        echo "Markdown gerado em /tmp/final_message.md"
+
     # ------------------------------------------------------------------
-    # STEP 5: Preparar JSON
+    # STEP 3: Preparar JSON (Lendo do DISCO)
     # ------------------------------------------------------------------
     - id: prepare_json
       shell: bash
-      env:
-        CONTENT: ${{ steps.assemble_markdown.outputs.markdown }}
       run: |
         set -euo pipefail
-        JSON_PAYLOAD=$(printf '%s' "$CONTENT" | jq -Rs '{body: .}')
-
-        echo "payload<<EOF"
-        echo "$JSON_PAYLOAD"
-        echo "EOF" >> "$GITHUB_OUTPUT"
+        
+        # Lê o arquivo do disco e usa jq para criar o JSON seguro
+        # jq --raw-input --slurp lê o arquivo todo como uma única string
+        jq --raw-input --slurp '{body: .}' /tmp/final_message.md > /tmp/payload.json
+        
+        echo "Payload JSON gerado em /tmp/payload.json"
 
     # ------------------------------------------------------------------
-    # STEP 6: Request
+    # STEP 4: Request (Enviando arquivo)
     # ------------------------------------------------------------------
     - id: post_comment
       shell: bash
@@ -202,16 +163,17 @@ runs:
         TOKEN: ${{ inputs.token }}
         REPO: ${{ github.repository }}
         PR_NUM: ${{ inputs.pr_number }}
-        JSON_DATA: ${{ steps.prepare_json.outputs.payload }}
       run: |
         set -euo pipefail
         URL="https://api.github.com/repos/$REPO/issues/$PR_NUM/comments"
         
+        # Passamos o arquivo JSON direto pro Curl com @
         HTTP_CODE=$(curl -sS -w "%{http_code}" -o response.json \
           -H "Authorization: Bearer $TOKEN" \
           -H "Accept: application/vnd.github+json" \
+          -H "Content-Type: application/json" \
           -X POST "$URL" \
-          -d "$JSON_DATA")
+          -d @/tmp/payload.json)
 
         if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
           echo "::error::Failed to post comment. HTTP Code: $HTTP_CODE"
