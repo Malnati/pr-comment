@@ -1,6 +1,6 @@
-# Malnati/pr-comment@v6.1.0
+# Malnati/pr-comment@v7.0.0
 name: "PR Comment Template"
-description: "Post standard, templated comments on Pull Requests with Sticky mode support."
+description: "Posta comentários padronizados e 'Sticky' em Pull Requests. Arquitetura modular v7 (File-based)."
 author: "Ricardo Malnati"
 
 branding:
@@ -9,228 +9,172 @@ branding:
 
 inputs:
   token:
-    description: "GitHub token"
+    description: "GitHub token (contents:read, pull-requests:write)."
     required: true
   pr_number:
-    description: "PR number"
+    description: "Pull Request number."
     required: true
-  header_actor:
-    description: "Message author"
-    required: true
-  header_title:
-    description: "Comment title"
-    required: true
-  header_subject:
-    description: "Comment subject"
-    required: true
-  body_message:
-    description: "Main message body"
-    required: true
-  body_scope:
-    description: "Scope text"
+  
+  # Configuração do Template
+  template_path:
+    description: "Caminho relativo para o arquivo de template Markdown."
     required: false
     default: ""
-  body_todo:
-    description: "TODO text"
+  
+  # Configuração Sticky
+  message_id:
+    description: "ID único (invisível) para atualizar o mesmo comentário (Sticky Mode)."
+    required: false
+    default: ""
+
+  # Variáveis de Substituição (Mapeadas para o Template)
+  header_title:
+    description: "Título do comentário (${TITLE})."
+    required: false
+    default: ""
+  header_subject:
+    description: "Assunto/Subtítulo (${SUBJECT})."
+    required: false
+    default: ""
+  header_actor:
+    description: "Autor da ação (${ACTOR})."
+    required: false
+    default: ""
+  body_message:
+    description: "Corpo principal da mensagem (${BODY_MESSAGE})."
     required: false
     default: ""
   footer_result:
-    description: "Result summary"
+    description: "Resultado (${FOOTER_RESULT})."
     required: false
     default: ""
   footer_advise:
-    description: "Advice / next steps"
-    required: false
-    default: ""
-  template_path:
-    description: "Path to custom Markdown template"
-    required: false
-    default: ""
-  message_id:
-    description: "Unique ID (hidden) to enable Sticky Comments"
+    description: "Conselho/Próximo passo (${FOOTER_ADVISE})."
     required: false
     default: ""
 
 runs:
   using: "composite"
   steps:
-    # ------------------------------------------------------------------
-    # STEP 0: DIAGNÓSTICO DE INPUTS (Log Rico)
-    # ------------------------------------------------------------------
-    - id: debug_inputs
-      shell: bash
-      env:
-        PR_NUM: ${{ inputs.pr_number }}
-        MSG_ID: ${{ inputs.message_id }}
-        TPL_PATH: ${{ inputs.template_path }}
-        # Verificando presença de conteúdo opcional
-        HAS_SCOPE: ${{ inputs.body_scope }}
-        HAS_TODO: ${{ inputs.body_todo }}
-        HAS_RES: ${{ inputs.footer_result }}
-      run: |
-        echo "::group::🔍 Step 0: Input Configuration Analysis"
-        echo "---------------------------------------------------------------"
-        echo "🎯 Target Pull Request: #$PR_NUM"
-        echo "---------------------------------------------------------------"
-        
-        # 1. Analisa Sticky Mode
-        if [ -n "$MSG_ID" ]; then
-           echo "✅ Sticky Mode: ENABLED"
-           echo "   🔹 ID: '$MSG_ID'"
-           echo "   👉 Consequência: A Action buscará um comentário existente com este ID."
-           echo "      - Se encontrar: Executa PATCH (Atualiza)."
-           echo "      - Se não encontrar: Executa POST (Cria novo)."
-        else
-           echo "⚪ Sticky Mode: DISABLED (Input 'message_id' is empty)"
-           echo "   👉 Consequência: A Action sempre executará POST (Criará um novo comentário)."
-           echo "      Isso pode gerar spam se o workflow rodar múltiplas vezes."
-        fi
-        echo "---------------------------------------------------------------"
-
-        # 2. Analisa Template
-        if [ -n "$TPL_PATH" ]; then
-           echo "📝 Template: CUSTOM"
-           echo "   🔹 Path: '$TPL_PATH'"
-           echo "   👉 Consequência: O layout será renderizado usando seu arquivo."
-        else
-           echo "📄 Template: DEFAULT"
-           echo "   👉 Consequência: Usando layout padrão embutido na Action."
-        fi
-        echo "---------------------------------------------------------------"
-
-        # 3. Resumo de Conteúdo
-        echo "📦 Content Blocks:"
-        [ -n "$HAS_SCOPE" ] && echo "   - Scope: Present" || echo "   - Scope: Empty (Skipped)"
-        [ -n "$HAS_TODO" ]  && echo "   - Todo:  Present" || echo "   - Todo:  Empty (Skipped)"
-        [ -n "$HAS_RES" ]   && echo "   - Footer: Present" || echo "   - Footer: Empty (Skipped)"
-        
-        echo "::endgroup::"
-
-    # ------------------------------------------------------------------
-    # STEP 0.5: VERIFICAÇÃO DE PERMISSÕES (Token Probe)
-    # ------------------------------------------------------------------
-    - id: debug_perms
+    # ==================================================================
+    # BLOCK 1: SETUP & VALIDATION
+    # ==================================================================
+    
+    # 1.0 - Validação de Inputs Básicos
+    - id: validate_inputs
       shell: bash
       env:
         TOKEN: ${{ inputs.token }}
+        PR_NUM: ${{ inputs.pr_number }}
       run: |
-        echo "::group::🔐 Step 0.5: Token Permission Check"
-        
-        # Faz um request HEAD para checar conectividade e headers
-        # O GitHub Actions TOKEN nem sempre retorna x-oauth-scopes, mas validamos a conexão
-        RESPONSE=$(curl -s -I -w "%{http_code}" -H "Authorization: Bearer $TOKEN" https://api.github.com/rate_limit)
-        HTTP_CODE=${RESPONSE: -3}
-        
-        echo "📡 API Connectivity Check:"
-        if [ "$HTTP_CODE" == "200" ]; then
-           echo "   ✅ Status 200 OK - Token aceito pela API."
-        else
-           echo "   ⚠️ Status $HTTP_CODE - Token pode ser inválido ou ter restrições de rede."
+        echo "::group::🔧 Setup: Input Validation"
+        if [ -z "$TOKEN" ]; then 
+           echo "❌ Error: Token is missing."
+           exit 1
         fi
-        
-        echo ""
-        echo "📋 REQUIRED PERMISSIONS (Lembrete):"
-        echo "   Para esta Action funcionar, o token deve ter:"
-        echo "   1. pull-requests: write  (Para postar/editar comentários)"
-        echo "   2. issues: write         (Fallback em alguns repos)"
-        echo "   3. contents: read        (Para ler o arquivo de template)"
-        echo ""
-        echo "   Se você receber erro 403 (Resource not accessible), verifique seu workflow YAML."
+        if [ -z "$PR_NUM" ]; then 
+           echo "❌ Error: PR Number is missing."
+           exit 1
+        fi
+        echo "✅ Inputs validated."
         echo "::endgroup::"
 
-    # ------------------------------------------------------------------
-    # STEP 1: Validar Template
-    # ------------------------------------------------------------------
-    - id: check_template
+    # 1.1 - Verificação de Permissões (Probe)
+    - id: check_perms
+      shell: bash
+      env:
+        TOKEN: ${{ inputs.token }}
+        REPO: ${{ github.repository }}
+        PR_NUM: ${{ inputs.pr_number }}
+      run: |
+        echo "::group::🔐 Setup: Permissions Probe"
+        # Testa acesso de escrita (GET em endpoint de comments valida escopo)
+        URL="https://api.github.com/repos/$REPO/issues/$PR_NUM/comments"
+        
+        echo "📡 Probing API: $URL"
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" "$URL")
+        
+        if [ "$HTTP_CODE" == "200" ] || [ "$HTTP_CODE" == "404" ]; then
+             echo "✅ API Access OK (HTTP $HTTP_CODE)."
+        else
+             echo "⚠️ API Access Warning (HTTP $HTTP_CODE)."
+             echo "   Ensure the token has 'pull-requests: write'."
+        fi
+        echo "::endgroup::"
+
+    # ==================================================================
+    # BLOCK 2: TEMPLATE ENGINE (FILE BASED)
+    # ==================================================================
+    
+    # 2.0 - Resolução do Arquivo de Template
+    - id: resolve_template
       shell: bash
       env:
         CUSTOM_PATH: ${{ inputs.template_path }}
         DEFAULT_PATH: ${{ github.action_path }}/templates/pr-comment.md
       run: |
-        set -euo pipefail
-        REQUIRED_VARS=("BODY_MESSAGE")
-        FINAL_TEMPLATE="$DEFAULT_PATH"
-
-        if [ -z "$CUSTOM_PATH" ]; then
-          echo "Using default template."
-        elif [ ! -f "$CUSTOM_PATH" ]; then
-          echo "::warning title=Template Not Found::Arquivo '$CUSTOM_PATH' não encontrado. Usando padrão."
+        echo "::group::📝 Template: Resolution"
+        
+        TARGET_FILE="/tmp/raw_template.md"
+        
+        if [[ -n "$CUSTOM_PATH" && -f "$CUSTOM_PATH" ]]; then
+           echo "🔹 Selected: Custom Template ($CUSTOM_PATH)"
+           cp "$CUSTOM_PATH" "$TARGET_FILE"
         else
-          MISSING=()
-          for VAR in "${REQUIRED_VARS[@]}"; do
-            if ! grep -Fq "\${$VAR}" "$CUSTOM_PATH" && ! grep -Fq "\$$VAR" "$CUSTOM_PATH"; then
-               MISSING+=("$VAR")
-            fi
-          done
-          if [ ${#MISSING[@]} -gt 0 ]; then
-            MISSING_STR=$(IFS=', '; echo "${MISSING[*]}")
-            echo "::warning title=Invalid Template::Template inválido. Faltam: [$MISSING_STR]. Usando padrão."
-          else
-            FINAL_TEMPLATE="$CUSTOM_PATH"
-          fi
+           echo "🔹 Selected: Default Template"
+           if [ ! -f "$DEFAULT_PATH" ]; then
+              echo "❌ Critical: Default template missing at $DEFAULT_PATH"
+              exit 1
+           fi
+           cp "$DEFAULT_PATH" "$TARGET_FILE"
         fi
-        echo "template_file=$FINAL_TEMPLATE" >> "$GITHUB_OUTPUT"
+        
+        echo "template_file=$TARGET_FILE" >> "$GITHUB_OUTPUT"
+        echo "::endgroup::"
 
-    # ------------------------------------------------------------------
-    # STEP 2: Montar Markdown e Injetar ID Oculto
-    # ------------------------------------------------------------------
-    - id: assemble_markdown
+    # 2.1 - Renderização e Injeção de ID
+    - id: render_template
       shell: bash
       env:
-        # Inputs
-        ACTOR: ${{ inputs.header_actor }}
+        TEMPLATE_FILE: ${{ steps.resolve_template.outputs.template_file }}
+        MSG_ID: ${{ inputs.message_id }}
+        # Variáveis para envsubst
         TITLE: ${{ inputs.header_title }}
         SUBJECT: ${{ inputs.header_subject }}
+        ACTOR: ${{ inputs.header_actor }}
         BODY_MESSAGE: ${{ inputs.body_message }}
-        RAW_SCOPE: ${{ inputs.body_scope }}
-        RAW_TODO: ${{ inputs.body_todo }}
-        IN_RES: ${{ inputs.footer_result }}
-        IN_ADV: ${{ inputs.footer_advise }}
-        TEMPLATE_PATH: ${{ steps.check_template.outputs.template_file }}
-        MSG_ID: ${{ inputs.message_id }}
+        FOOTER_RESULT: ${{ inputs.footer_result }}
+        FOOTER_ADVISE: ${{ inputs.footer_advise }}
       run: |
-        set -euo pipefail
-
-        if [ ! -f "$TEMPLATE_PATH" ]; then
-          echo "::error::Critical: Template path invalido."
-          exit 1
-        fi
-
-        # 1. Rodapé
-        FOOTER_BLOCK=""
-        if [ -n "$IN_RES" ]; then
-           FOOTER_BLOCK="$IN_RES"
-        fi
-        if [ -n "$IN_ADV" ]; then
-           if [ -n "$FOOTER_BLOCK" ]; then
-              FOOTER_BLOCK="${FOOTER_BLOCK}<br>${IN_ADV}"
-           else
-              FOOTER_BLOCK="$IN_ADV"
-           fi
-        fi
-
-        # 2. Exportar
-        export ACTOR TITLE SUBJECT BODY_MESSAGE
-        export BODY_SCOPE_BLOCK="$RAW_SCOPE"
-        export BODY_TODO_BLOCK="$RAW_TODO"
-        export FOOTER_BLOCK="$FOOTER_BLOCK"
-
-        # 3. Renderizar template temporário
-        envsubst < "$TEMPLATE_PATH" > /tmp/content_raw.md
-
-        # 4. Injetar ID Oculto (Se existir) no TOPO do arquivo final
+        echo "::group::🎨 Template: Rendering"
+        
+        FINAL_FILE="/tmp/final_comment.md"
+        
+        # 1. Injeta ID Oculto (Sticky) no topo
         if [ -n "$MSG_ID" ]; then
-           echo "" > /tmp/final_message.md
-           cat /tmp/content_raw.md >> /tmp/final_message.md
-           echo "Sticky ID '$MSG_ID' injetado no markdown."
+           echo "" > "$FINAL_FILE"
+           echo "✅ Sticky ID injected: $MSG_ID"
         else
-           mv /tmp/content_raw.md /tmp/final_message.md
+           echo "" > "$FINAL_FILE"
         fi
+        
+        # 2. Substituição de Variáveis
+        # Exporta explicitamente para o envsubst ver
+        export TITLE SUBJECT ACTOR BODY_MESSAGE FOOTER_RESULT FOOTER_ADVISE
+        
+        envsubst < "$TEMPLATE_FILE" >> "$FINAL_FILE"
+        
+        echo "✅ Markdown rendered successfully."
+        echo "final_file=$FINAL_FILE" >> "$GITHUB_OUTPUT"
+        echo "::endgroup::"
 
-    # ------------------------------------------------------------------
-    # STEP 3: Decidir Ação (Create vs Update)
-    # ------------------------------------------------------------------
-    - id: resolve_action
+    # ==================================================================
+    # BLOCK 3: COMMENT MANAGEMENT (STICKY LOGIC)
+    # ==================================================================
+
+    # 3.0 - Busca de Comentário Existente
+    - id: find_comment
+      if: inputs.message_id != ''
       shell: bash
       env:
         TOKEN: ${{ inputs.token }}
@@ -238,58 +182,76 @@ runs:
         PR_NUM: ${{ inputs.pr_number }}
         MSG_ID: ${{ inputs.message_id }}
       run: |
-        set -euo pipefail
+        echo "::group::🕵️ Sticky Mode: Searching"
         
-        # Default: Criar Novo
-        TARGET_URL="https://api.github.com/repos/$REPO/issues/$PR_NUM/comments"
-        HTTP_METHOD="POST"
-        LOG_MSG="Criando novo comentário..."
-
-        # Se tiver ID, procura se já existe
-        if [ -n "$MSG_ID" ]; then
-           echo "Buscando comentário existente com ID: $MSG_ID..."
-           
-           # Busca comentários (limitado a 100 para performance)
-           EXISTING_ID=$(curl -s -H "Authorization: Bearer $TOKEN" \
-             "https://api.github.com/repos/$REPO/issues/$PR_NUM/comments?per_page=100" \
-             | jq -r ".[] | select(.body | contains(\"\")) | .id" | head -n 1)
-
-           if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
-              # Se achou, muda para UPDATE (PATCH)
-              TARGET_URL="https://api.github.com/repos/$REPO/issues/comments/$EXISTING_ID"
-              HTTP_METHOD="PATCH"
-              LOG_MSG="Atualizando comentário ID $EXISTING_ID..."
-           else
-              LOG_MSG="Comentário anterior não encontrado. Criando novo."
-           fi
+        SEARCH_STRING=""
+        API_URL="https://api.github.com/repos/$REPO/issues/$PR_NUM/comments?per_page=100"
+        
+        echo "🔍 Searching for ID in PR comments..."
+        
+        # Curl + JQ para filtrar pelo corpo do comentário
+        COMMENT_ID=$(curl -s -H "Authorization: Bearer $TOKEN" "$API_URL" \
+          | jq -r ".[] | select(.body | contains(\"$SEARCH_STRING\")) | .id" \
+          | head -n 1)
+        
+        if [ -n "$COMMENT_ID" ] && [ "$COMMENT_ID" != "null" ]; then
+           echo "✅ Found existing comment ID: $COMMENT_ID"
+           echo "action=UPDATE" >> "$GITHUB_OUTPUT"
+           echo "comment_id=$COMMENT_ID" >> "$GITHUB_OUTPUT"
+        else
+           echo "⚪ No match found. Creating new."
+           echo "action=CREATE" >> "$GITHUB_OUTPUT"
         fi
+        echo "::endgroup::"
 
-        echo "url=$TARGET_URL" >> "$GITHUB_OUTPUT"
-        echo "method=$HTTP_METHOD" >> "$GITHUB_OUTPUT"
-        echo "log=$LOG_MSG" >> "$GITHUB_OUTPUT"
-
-    # ------------------------------------------------------------------
-    # STEP 4: Preparar JSON
-    # ------------------------------------------------------------------
-    - id: prepare_json
+    # 3.1 - Definição da URL de Destino
+    - id: target_setup
       shell: bash
+      env:
+        REPO: ${{ github.repository }}
+        PR_NUM: ${{ inputs.pr_number }}
+        ACTION: ${{ steps.find_comment.outputs.action }}
+        COMMENT_ID: ${{ steps.find_comment.outputs.comment_id }}
       run: |
-        set -euo pipefail
-        jq --raw-input --slurp '{body: .}' /tmp/final_message.md > /tmp/payload.json
+        # Define URL e Método baseado na busca anterior
+        if [ "$ACTION" == "UPDATE" ]; then
+           URL="https://api.github.com/repos/$REPO/issues/comments/$COMMENT_ID"
+           METHOD="PATCH"
+        else
+           URL="https://api.github.com/repos/$REPO/issues/$PR_NUM/comments"
+           METHOD="POST"
+        fi
+        
+        echo "url=$URL" >> "$GITHUB_OUTPUT"
+        echo "method=$METHOD" >> "$GITHUB_OUTPUT"
 
-    # ------------------------------------------------------------------
-    # STEP 5: Executar Request (Dinâmico)
-    # ------------------------------------------------------------------
+    # ==================================================================
+    # BLOCK 4: API EXECUTION
+    # ==================================================================
+
+    # 4.0 - Preparação do Payload
+    - id: prepare_payload
+      shell: bash
+      env:
+        FILE: ${{ steps.render_template.outputs.final_file }}
+      run: |
+        echo "::group::📦 Payload: Packaging"
+        # Converte o arquivo Markdown renderizado para JSON field 'body'
+        jq --raw-input --slurp '{body: .}' "$FILE" > /tmp/payload.json
+        echo "✅ Payload created at /tmp/payload.json"
+        echo "::endgroup::"
+
+    # 4.1 - Envio da Requisição
     - id: send_request
       shell: bash
       env:
         TOKEN: ${{ inputs.token }}
-        URL: ${{ steps.resolve_action.outputs.url }}
-        METHOD: ${{ steps.resolve_action.outputs.method }}
-        LOG: ${{ steps.resolve_action.outputs.log }}
+        URL: ${{ steps.target_setup.outputs.url }}
+        METHOD: ${{ steps.target_setup.outputs.method }}
       run: |
-        set -euo pipefail
-        echo "$LOG"
+        echo "::group::📡 API: Sending Comment"
+        echo "Method: $METHOD"
+        echo "Target: $URL"
         
         HTTP_CODE=$(curl -sS -w "%{http_code}" -o response.json \
           -H "Authorization: Bearer $TOKEN" \
@@ -299,9 +261,10 @@ runs:
           -d @/tmp/payload.json)
 
         if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
-          echo "::error::Request Failed ($METHOD). HTTP Code: $HTTP_CODE"
+          echo "❌ Request Failed ($HTTP_CODE)"
           cat response.json
           exit 1
         else
-          echo "Success! ($HTTP_CODE)"
+          echo "✅ Success ($HTTP_CODE)"
         fi
+        echo "::endgroup::"
