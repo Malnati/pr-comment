@@ -33,10 +33,10 @@ inputs:
 runs:
   using: "composite"
   steps:
+  
     # ==================================================================
     # BLOCK 1: SETUP & VALIDATION
     # ==================================================================
-    
     # 1.0 - Validação de Inputs Básicos
     - id: validate_inputs
       shell: bash
@@ -45,6 +45,7 @@ runs:
         PR_NUM: ${{ inputs.pr_number }}
         USE_RAW_BODY: ${{ inputs.use_raw_body }}
         TEMPLATE_PATH: ${{ inputs.template_path }}
+        BODY_MESSAGE: ${{ env.BODY_MESSAGE }}
       run: |
         echo "::group::🔧 Setup: Input Validation"
         if [ -z "$TOKEN" ]; then 
@@ -55,14 +56,16 @@ runs:
            echo "❌ Error: PR Number is missing."
            exit 1
         fi
-
         if [ "$USE_RAW_BODY" = "true" ]; then
+           if [ -z "$BODY_MESSAGE" ]; then
+             echo "❌ Error: use_raw_body=true, mas a variável de ambiente BODY_MESSAGE está vazia ou não foi definida."
+             exit 1
+           fi
            echo "::warning::Flag 'use_raw_body' habilitada: o template será ignorado e o comentário usará apenas a variável de ambiente BODY_MESSAGE."
            if [ -n "$TEMPLATE_PATH" ]; then
              echo "::notice::Input 'template_path' informado, mas será ignorado porque use_raw_body=true. Remova a flag para usar substituições via template."
            fi
         fi
-
         if [ -n "$TEMPLATE_PATH" ] && [ -f "$TEMPLATE_PATH" ]; then
           VARS_IN_TEMPLATE=$(grep -o '\${[A-Za-z_][A-Za-z0-9_]*}' "$TEMPLATE_PATH" | sed 's/[${}]//g' | sort -u | tr '\n' ' ')
           echo "::warning::Template com variáveis para envsubst detectado."
@@ -81,7 +84,6 @@ runs:
           fi
           echo "────────────────────────────────────────────────────────────"
         fi
-
         echo "✅ Inputs validated."
         echo "::endgroup::"
         
@@ -96,10 +98,8 @@ runs:
         echo "::group::🔐 Setup: Permissions Probe"
         # Testa acesso de escrita (GET em endpoint de comments valida escopo)
         URL="https://api.github.com/repos/$REPO/issues/$PR_NUM/comments"
-        
         echo "📡 Probing API: $URL"
         HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" "$URL")
-        
         if [ "$HTTP_CODE" == "200" ] || [ "$HTTP_CODE" == "404" ]; then
              echo "✅ API Access OK (HTTP $HTTP_CODE)."
         else
@@ -111,7 +111,6 @@ runs:
     # ==================================================================
     # BLOCK 2: TEMPLATE ENGINE (FILE BASED)
     # ==================================================================
-    
     # 2.0 - Resolução do Arquivo de Template
     - id: resolve_template
       shell: bash
@@ -121,11 +120,9 @@ runs:
         USE_RAW_BODY: ${{ inputs.use_raw_body }}
       run: |
         echo "::group::📝 Template: Resolution"
-        
         TARGET_FILE="/tmp/raw_template.md"
-
         if [ "$USE_RAW_BODY" = "true" ]; then
-           echo "🔹 Raw mode ativo: ignorando templates e usando body_message como corpo do comentário.";
+           echo "🔹 Raw mode ativo: ignorando templates e usando BODY_MESSAGE como corpo do comentário.";
            : > "$TARGET_FILE"
         else
            if [[ -n "$CUSTOM_PATH" && -f "$CUSTOM_PATH" ]]; then
@@ -140,7 +137,6 @@ runs:
               cp "$DEFAULT_PATH" "$TARGET_FILE"
            fi
         fi
-        
         echo "template_file=$TARGET_FILE" >> "$GITHUB_OUTPUT"
         echo "::endgroup::"
 
@@ -153,16 +149,13 @@ runs:
         USE_RAW_BODY: ${{ inputs.use_raw_body }}
       run: |
         echo "::group::🎨 Template: Rendering"
-        
         FINAL_FILE="/tmp/final_comment.md"
-        
         if [ -n "$MSG_ID" ]; then
-           echo "" > "$FINAL_FILE"
+           echo "<!-- pr-comment-id:$MSG_ID -->" > "$FINAL_FILE"
            echo "✅ Sticky ID injected: $MSG_ID"
         else
-           echo "" > "$FINAL_FILE"
+           : > "$FINAL_FILE"
         fi
-
         if [ "$USE_RAW_BODY" = "true" ]; then
            echo "ℹ️ Raw mode habilitado: usando BODY_MESSAGE como corpo completo do comentário."
            printf '%s\n' "$BODY_MESSAGE" >> "$FINAL_FILE"
@@ -171,11 +164,7 @@ runs:
            echo "::endgroup::"
            exit 0
         fi
-        
-        export TITLE SUBJECT ACTOR BODY_MESSAGE FOOTER_RESULT FOOTER_ADVISE
-        
         envsubst < "$TEMPLATE_FILE" >> "$FINAL_FILE"
-        
         echo "✅ Markdown rendered successfully."
         echo "final_file=$FINAL_FILE" >> "$GITHUB_OUTPUT"
         echo "::endgroup::"
@@ -183,7 +172,6 @@ runs:
     # ==================================================================
     # BLOCK 3: COMMENT MANAGEMENT (STICKY LOGIC)
     # ==================================================================
-
     # 3.0 - Busca de Comentário Existente
     - id: find_comment
       if: inputs.message_id != ''
@@ -196,12 +184,11 @@ runs:
       run: |
         echo "::group::🕵️ Sticky Mode: Searching"
         
-        SEARCH_STRING=""
+        SEARCH_STRING="pr-comment-id:$MSG_ID"
         API_URL="https://api.github.com/repos/$REPO/issues/$PR_NUM/comments?per_page=100"
         
         echo "🔍 Searching for ID in PR comments..."
         
-        # Curl + JQ para filtrar pelo corpo do comentário
         COMMENT_ID=$(curl -s -H "Authorization: Bearer $TOKEN" "$API_URL" \
           | jq -r ".[] | select(.body | contains(\"$SEARCH_STRING\")) | .id" \
           | head -n 1)
@@ -233,14 +220,12 @@ runs:
            URL="https://api.github.com/repos/$REPO/issues/$PR_NUM/comments"
            METHOD="POST"
         fi
-        
         echo "url=$URL" >> "$GITHUB_OUTPUT"
         echo "method=$METHOD" >> "$GITHUB_OUTPUT"
 
     # ==================================================================
     # BLOCK 4: API EXECUTION
     # ==================================================================
-
     # 4.0 - Preparação do Payload
     - id: prepare_payload
       shell: bash
@@ -264,14 +249,12 @@ runs:
         echo "::group::📡 API: Sending Comment"
         echo "Method: $METHOD"
         echo "Target: $URL"
-        
         HTTP_CODE=$(curl -sS -w "%{http_code}" -o response.json \
           -H "Authorization: Bearer $TOKEN" \
           -H "Accept: application/vnd.github+json" \
           -H "Content-Type: application/json" \
           -X "$METHOD" "$URL" \
           -d @/tmp/payload.json)
-
         if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
           echo "❌ Request Failed ($HTTP_CODE)"
           cat response.json
