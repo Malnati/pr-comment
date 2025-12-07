@@ -154,7 +154,7 @@ runs:
         TARGET_FILE="/tmp/raw_template.md"
 
         if [ "$USE_RAW_BODY" = "true" ]; then
-           echo "🔹 Raw mode ativo: ignorando templates e usando body_message como corpo do comentário."
+           echo "🔹 Raw mode ativo: ignorando templates e usando body_message como corpo do comentário.";
            : > "$TARGET_FILE"
         else
            if [[ -n "$CUSTOM_PATH" && -f "$CUSTOM_PATH" ]]; then
