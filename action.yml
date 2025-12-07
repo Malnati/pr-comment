@@ -1,6 +1,6 @@
-# Malnati/pr-comment@v7.0.0
-name: "PR Comment Template"
-description: "Posta comentários padronizados e 'Sticky' em Pull Requests. Arquitetura modular v7 (File-based)."
+# Malnati/pr-comment@v7.1.0
+name: "PR Comment Pro"
+description: "Posta comentários padronizados e 'Sticky' em Pull Requests com ou sem template. Malnati/pr-comment@v7.1.0"
 author: "Ricardo Malnati"
 
 branding:
@@ -20,6 +20,11 @@ inputs:
     description: "Caminho relativo para o arquivo de template Markdown."
     required: false
     default: ""
+
+  use_raw_body:
+    description: "Se 'true', ignora templates e usa o texto cru do body_message."
+    required: false
+    default: "false"
   
   # Configuração Sticky
   message_id:
@@ -66,6 +71,13 @@ runs:
       env:
         TOKEN: ${{ inputs.token }}
         PR_NUM: ${{ inputs.pr_number }}
+        USE_RAW_BODY: ${{ inputs.use_raw_body }}
+        TEMPLATE_PATH: ${{ inputs.template_path }}
+        HEADER_TITLE: ${{ inputs.header_title }}
+        HEADER_SUBJECT: ${{ inputs.header_subject }}
+        HEADER_ACTOR: ${{ inputs.header_actor }}
+        FOOTER_RESULT: ${{ inputs.footer_result }}
+        FOOTER_ADVISE: ${{ inputs.footer_advise }}
       run: |
         echo "::group::🔧 Setup: Input Validation"
         if [ -z "$TOKEN" ]; then 
@@ -76,6 +88,29 @@ runs:
            echo "❌ Error: PR Number is missing."
            exit 1
         fi
+
+        if [ "$USE_RAW_BODY" = "true" ]; then
+           echo "::warning::Flag 'use_raw_body' habilitada: alguns inputs baseados em template serão ignorados."
+           if [ -n "$TEMPLATE_PATH" ]; then
+             echo "::notice::Input 'template_path' informado, mas será ignorado porque use_raw_body=true. Remova a flag para usar substituições via template."
+           fi
+           if [ -n "$HEADER_TITLE" ]; then
+             echo "::notice::Input 'header_title' informado, mas será ignorado porque use_raw_body=true. Remova a flag para usar substituições via template."
+           fi
+           if [ -n "$HEADER_SUBJECT" ]; then
+             echo "::notice::Input 'header_subject' informado, mas será ignorado porque use_raw_body=true. Remova a flag para usar substituições via template."
+           fi
+           if [ -n "$HEADER_ACTOR" ]; then
+             echo "::notice::Input 'header_actor' informado, mas será ignorado porque use_raw_body=true. Remova a flag para usar substituições via template."
+           fi
+           if [ -n "$FOOTER_RESULT" ]; then
+             echo "::notice::Input 'footer_result' informado, mas será ignorado porque use_raw_body=true. Remova a flag para usar substituições via template."
+           fi
+           if [ -n "$FOOTER_ADVISE" ]; then
+             echo "::notice::Input 'footer_advise' informado, mas será ignorado porque use_raw_body=true. Remova a flag para usar substituições via template."
+           fi
+        fi
+
         echo "✅ Inputs validated."
         echo "::endgroup::"
 
@@ -112,21 +147,27 @@ runs:
       env:
         CUSTOM_PATH: ${{ inputs.template_path }}
         DEFAULT_PATH: ${{ github.action_path }}/templates/pr-comment.md
+        USE_RAW_BODY: ${{ inputs.use_raw_body }}
       run: |
         echo "::group::📝 Template: Resolution"
         
         TARGET_FILE="/tmp/raw_template.md"
-        
-        if [[ -n "$CUSTOM_PATH" && -f "$CUSTOM_PATH" ]]; then
-           echo "🔹 Selected: Custom Template ($CUSTOM_PATH)"
-           cp "$CUSTOM_PATH" "$TARGET_FILE"
+
+        if [ "$USE_RAW_BODY" = "true" ]; then
+           echo "🔹 Raw mode ativo: ignorando templates e usando body_message como corpo do comentário."
+           : > "$TARGET_FILE"
         else
-           echo "🔹 Selected: Default Template"
-           if [ ! -f "$DEFAULT_PATH" ]; then
-              echo "❌ Critical: Default template missing at $DEFAULT_PATH"
-              exit 1
+           if [[ -n "$CUSTOM_PATH" && -f "$CUSTOM_PATH" ]]; then
+              echo "🔹 Selected: Custom Template ($CUSTOM_PATH)"
+              cp "$CUSTOM_PATH" "$TARGET_FILE"
+           else
+              echo "🔹 Selected: Default Template"
+              if [ ! -f "$DEFAULT_PATH" ]; then
+                 echo "❌ Critical: Default template missing at $DEFAULT_PATH"
+                 exit 1
+              fi
+              cp "$DEFAULT_PATH" "$TARGET_FILE"
            fi
-           cp "$DEFAULT_PATH" "$TARGET_FILE"
         fi
         
         echo "template_file=$TARGET_FILE" >> "$GITHUB_OUTPUT"
@@ -138,6 +179,7 @@ runs:
       env:
         TEMPLATE_FILE: ${{ steps.resolve_template.outputs.template_file }}
         MSG_ID: ${{ inputs.message_id }}
+        USE_RAW_BODY: ${{ inputs.use_raw_body }}
         # Variáveis para envsubst
         TITLE: ${{ inputs.header_title }}
         SUBJECT: ${{ inputs.header_subject }}
@@ -157,9 +199,17 @@ runs:
         else
            echo "" > "$FINAL_FILE"
         fi
+
+        if [ "$USE_RAW_BODY" = "true" ]; then
+           echo "ℹ️ Raw mode habilitado: usando body_message como corpo completo do comentário."
+           printf '%s\n' "$BODY_MESSAGE" >> "$FINAL_FILE"
+           echo "✅ Raw comment rendered successfully (no template)."
+           echo "final_file=$FINAL_FILE" >> "$GITHUB_OUTPUT"
+           echo "::endgroup::"
+           exit 0
+        fi
         
         # 2. Substituição de Variáveis
-        # Exporta explicitamente para o envsubst ver
         export TITLE SUBJECT ACTOR BODY_MESSAGE FOOTER_RESULT FOOTER_ADVISE
         
         envsubst < "$TEMPLATE_FILE" >> "$FINAL_FILE"
