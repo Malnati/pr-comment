@@ -183,16 +183,12 @@ runs:
         MSG_ID: ${{ inputs.message_id }}
       run: |
         echo "::group::🕵️ Sticky Mode: Searching"
-        
         SEARCH_STRING="pr-comment-id:$MSG_ID"
         API_URL="https://api.github.com/repos/$REPO/issues/$PR_NUM/comments?per_page=100"
-        
         echo "🔍 Searching for ID in PR comments..."
-        
         COMMENT_ID=$(curl -s -H "Authorization: Bearer $TOKEN" "$API_URL" \
           | jq -r ".[] | select(.body | contains(\"$SEARCH_STRING\")) | .id" \
           | head -n 1)
-        
         if [ -n "$COMMENT_ID" ] && [ "$COMMENT_ID" != "null" ]; then
            echo "✅ Found existing comment ID: $COMMENT_ID"
            echo "action=UPDATE" >> "$GITHUB_OUTPUT"
