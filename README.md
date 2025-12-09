@@ -121,79 +121,102 @@ steps:
 
 ## 📚 Usage Examples
 
-### Example 1: Code Review Template
+### Example 1: Basic Usage with All Optional Fields
 
 ```yaml
-name: Automated Code Review
+name: Complete PR Notification
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened]
 
 jobs:
-  post-review:
+  notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Post Review Checklist
+      - name: Post Complete Notification
         uses: Malnati/pr-comment@v4.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
           header_actor: ${{ github.actor }}
-          header_title: "📋 Code Review Checklist"
-          header_subject: "Automated Quality Check"
-          body_message: "Please review the following items before merging:"
+          header_title: "📢 New Pull Request Created"
+          header_subject: "Automated Welcome Message"
+          body_message: "Thank you for creating this pull request! Here's what happens next:"
           body_scope: |
             - **PR Title:** ${{ github.event.pull_request.title }}
             - **Author:** @${{ github.event.pull_request.user.login }}
-            - **Branch:** ${{ github.event.pull_request.head.ref }}
+            - **Branch:** ${{ github.event.pull_request.head.ref }} → ${{ github.event.pull_request.base.ref }}
+            - **Files Changed:** ${{ github.event.pull_request.changed_files }}
           body_todo: |
-            - [ ] Unit tests passing
-            - [ ] No breaking changes
-            - [ ] Documentation updated
-            - [ ] Code style consistent
-          footer_result: "Review Required"
-          footer_advise: "Please assign a reviewer and address all checkboxes."
+            - [ ] Code review by team members
+            - [ ] CI/CD pipeline passes
+            - [ ] Tests executed successfully
+            - [ ] Documentation updated if needed
+          footer_result: "👋 Welcome!"
+          footer_advise: "Please wait for reviews and CI checks to complete before merging."
 ```
 
-### Example 2: Deployment Status Notification
+### Example 2: Minimal Configuration (Only Required Fields)
 
 ```yaml
-name: Deployment Status
+name: Simple PR Comment
 on:
-  workflow_run:
-    workflows: ["Deploy"]
-    types:
-      - completed
+  pull_request:
+    types: [labeled]
 
 jobs:
-  deployment-notification:
+  simple-comment:
     runs-on: ubuntu-latest
     steps:
-      - name: Post Deployment Status
+      - name: Post Minimal Comment
         uses: Malnati/pr-comment@v4.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          pr_number: 42  # Your PR number here
-          header_actor: "Deployment Bot"
-          header_title: "🚀 Deployment Completed"
-          header_subject: "Production Environment"
-          body_message: "The deployment to production has finished."
-          body_scope: |
-            - **Environment:** Production
-            - **Status:** ${{ github.event.workflow_run.conclusion }}
-            - **Workflow:** ${{ github.event.workflow_run.name }}
-            - **Duration:** ${{ github.event.workflow_run.updated_at - github.event.workflow_run.run_started_at }}
-          footer_result: "✅ Deployment Successful"
-          footer_advise: "Monitor application metrics for any issues."
+          pr_number: ${{ github.event.pull_request.number }}
+          header_actor: "Automation Bot"
+          header_title: "🏷️ Label Added"
+          header_subject: "Label: ${{ github.event.label.name }}"
+          body_message: "A new label has been added to this pull request."
 ```
 
-### Example 3: Security Scan Results with Custom Template
+### Example 3: Deployment Status with Custom Template
 
 ```yaml
-name: Security Scan
+name: Deployment Notification
+on:
+  deployment_status:
+    types: [created]
+
+jobs:
+  deploy-notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Post Deployment Update
+        uses: Malnati/pr-comment@v4.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pr_number: ${{ github.event.deployment.payload.pull_request.number }}
+          header_actor: "Deployment System"
+          header_title: "🚀 Deployment Initiated"
+          header_subject: "Environment: ${{ github.event.deployment.environment }}"
+          body_message: "Deployment process has started for the specified environment."
+          body_scope: |
+            - **Target:** ${{ github.event.deployment.environment }}
+            - **SHA:** ${{ github.event.deployment.sha }}
+            - **Task:** ${{ github.event.deployment.task }}
+            - **Ref:** ${{ github.event.deployment.ref }}
+          footer_result: "⏳ In Progress"
+          footer_advise: "Monitor deployment logs for real-time updates."
+          template_path: ".github/templates/deployment-template.md"
+```
+
+### Example 4: Security Scan Results (Scope Only, No TODOs)
+
+```yaml
+name: Security Analysis
 on:
   pull_request:
     types: [synchronize]
@@ -202,148 +225,370 @@ jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - name: Run Security Scan
+        id: scan
+        run: |
+          # Simulate security scan results
+          echo "critical=0" >> $GITHUB_OUTPUT
+          echo "high=2" >> $GITHUB_OUTPUT
+          echo "medium=5" >> $GITHUB_OUTPUT
+          echo "low=3" >> $GITHUB_OUTPUT
 
-      - name: Post Security Report
+      - name: Post Scan Results
         uses: Malnati/pr-comment@v4.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
-          header_actor: "Security Scanner"
-          header_title: "🔒 Security Scan Results"
-          header_subject: "Vulnerability Assessment"
-          body_message: "Security scan completed for the latest changes."
+          header_actor: "Security Scanner v2.1"
+          header_title: "🔒 Security Assessment"
+          header_subject: "Vulnerability Analysis"
+          body_message: "Automated security scan completed. Please review findings."
           body_scope: |
-            - **Scan Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-            - **Target Branch:** ${{ github.event.pull_request.head.ref }}
-            - **Files Changed:** ${{ github.event.pull_request.changed_files }}
-          body_todo: |
-            - [ ] **Critical:** 0 vulnerabilities
-            - [ ] **High:** 2 vulnerabilities
-            - [ ] **Medium:** 5 vulnerabilities
-            - [ ] **Low:** 3 vulnerabilities
-          footer_result: "⚠️ Review Required"
-          footer_advise: "Address high and medium severity issues before merging."
-          template_path: ".github/templates/security-report.md"
+            - **Critical Issues:** ${{ steps.scan.outputs.critical }}
+            - **High Severity:** ${{ steps.scan.outputs.high }}
+            - **Medium Severity:** ${{ steps.scan.outputs.medium }}
+            - **Low Severity:** ${{ steps.scan.outputs.low }}
+            - **Total Findings:** ${{ steps.scan.outputs.critical + steps.scan.outputs.high + steps.scan.outputs.medium + steps.scan.outputs.low }}
+          footer_result: "⚠️ Action Required"
+          footer_advise: "Address high and critical severity issues before merging."
 ```
 
-**Custom Template `.github/templates/security-report.md`:**
-```markdown
-# 🔒 Security Assessment
-**Scanner:** @$ACTOR | **Scope:** $SUBJECT
-
-## Executive Summary
-$BODY_MESSAGE
-
-## Scan Details
-$BODY_SCOPE_BLOCK
-
-## Vulnerability Breakdown
-$BODY_TODO_BLOCK
-
-## Recommendations
-1. Fix high severity issues immediately
-2. Review medium severity within 48 hours
-3. Low severity can be addressed in future sprints
-
----
-**Status:** $FOOTER_BLOCK | **Next Steps:** Please review security findings
-```
-
-### Example 4: Test Coverage Report
+### Example 5: Test Results (TODOs Only, No Scope)
 
 ```yaml
-name: Test Coverage
+name: Test Execution Report
 on:
   pull_request:
     types: [closed]
 
 jobs:
-  coverage-report:
+  test-report:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate Coverage Report
-        id: coverage
+      - name: Generate Test Results
+        id: tests
         run: |
-          echo "coverage=92" >> $GITHUB_OUTPUT
-          echo "tests=150" >> $GITHUB_OUTPUT
-          echo "passed=145" >> $GITHUB_OUTPUT
-          echo "failed=5" >> $GITHUB_OUTPUT
+          echo "unit_passed=145" >> $GITHUB_OUTPUT
+          echo "unit_failed=3" >> $GITHUB_OUTPUT
+          echo "integration_passed=89" >> $GITHUB_OUTPUT
+          echo "integration_failed=1" >> $GITHUB_OUTPUT
+          echo "e2e_passed=42" >> $GITHUB_OUTPUT
+          echo "e2e_failed=0" >> $GITHUB_OUTPUT
 
-      - name: Post Coverage Summary
+      - name: Post Test Summary
         uses: Malnati/pr-comment@v4.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
-          header_actor: "Test Runner"
-          header_title: "📊 Test Coverage Report"
+          header_actor: "Test Automation Suite"
+          header_title: "🧪 Test Execution Report"
           header_subject: "PR #${{ github.event.pull_request.number }}"
-          body_message: "Test execution completed for this pull request."
-          body_scope: |
-            - **Overall Coverage:** ${{ steps.coverage.outputs.coverage }}%
-            - **Total Tests:** ${{ steps.coverage.outputs.tests }}
-            - **Passed:** ${{ steps.coverage.outputs.passed }}
-            - **Failed:** ${{ steps.coverage.outputs.failed }}
-            - **Success Rate:** ${{ format('{0:.1f}', steps.coverage.outputs.passed / steps.coverage.outputs.tests * 100) }}%
-          footer_result: "${{ steps.coverage.outputs.coverage >= 80 && '✅ Coverage Target Met' || '❌ Coverage Below Target' }}"
-          footer_advise: "${{ steps.coverage.outputs.coverage >= 80 && 'Ready for merge' || 'Please improve test coverage before merging' }}"
+          body_message: "All automated tests have been executed. Below are the results:"
+          body_todo: |
+            - [ ] **Unit Tests:** ${{ steps.tests.outputs.unit_passed }}/${{ steps.tests.outputs.unit_passed + steps.tests.outputs.unit_failed }} passed
+            - [ ] **Integration Tests:** ${{ steps.tests.outputs.integration_passed }}/${{ steps.tests.outputs.integration_passed + steps.tests.outputs.integration_failed }} passed
+            - [ ] **E2E Tests:** ${{ steps.tests.outputs.e2e_passed }}/${{ steps.tests.outputs.e2e_passed + steps.tests.outputs.e2e_failed }} passed
+            - [ ] **Overall Pass Rate:** ${{ format('{0:.1f}', (steps.tests.outputs.unit_passed + steps.tests.outputs.integration_passed + steps.tests.outputs.e2e_passed) / (steps.tests.outputs.unit_passed + steps.tests.outputs.unit_failed + steps.tests.outputs.integration_passed + steps.tests.outputs.integration_failed + steps.tests.outputs.e2e_passed + steps.tests.outputs.e2e_failed) * 100) }}%
+          footer_result: "${{ steps.tests.outputs.unit_failed == 0 && steps.tests.outputs.integration_failed == 0 && steps.tests.outputs.e2e_failed == 0 && '✅ All Tests Passed' || '❌ Some Tests Failed' }}"
+          footer_advise: "${{ steps.tests.outputs.unit_failed == 0 && steps.tests.outputs.integration_failed == 0 && steps.tests.outputs.e2e_failed == 0 && 'Ready for deployment' || 'Fix failing tests before proceeding' }}"
 ```
 
-### Example 5: Combined Workflow with Multiple Steps
+### Example 6: Code Quality Report with Complex Variables
 
 ```yaml
-name: Complete PR Quality Gate
+name: Code Quality Gate
+on:
+  pull_request:
+    types: [synchronize]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Analyze Code Quality
+        id: analysis
+        run: |
+          # Simulate code analysis
+          echo "complexity_score=7.2" >> $GITHUB_OUTPUT
+          echo "maintainability_index=85" >> $GITHUB_OUTPUT
+          echo "duplication_percent=1.5" >> $GITHUB_OUTPUT
+          echo "code_smells=12" >> $GITHUB_OUTPUT
+          echo "bugs=0" >> $GITHUB_OUTPUT
+          echo "debt_minutes=45" >> $GITHUB_OUTPUT
+
+      - name: Post Quality Report
+        uses: Malnati/pr-comment@v4.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pr_number: ${{ github.event.pull_request.number }}
+          header_actor: "SonarQube Analyzer"
+          header_title: "📊 Code Quality Report"
+          header_subject: "Quality Gate Analysis"
+          body_message: "Code quality analysis completed. Metrics compared against organization standards."
+          body_scope: |
+            - **Cyclomatic Complexity:** ${{ steps.analysis.outputs.complexity_score }} (target: ≤ 10)
+            - **Maintainability Index:** ${{ steps.analysis.outputs.maintainability_index }}/100
+            - **Duplication:** ${{ steps.analysis.outputs.duplication_percent }}% (target: ≤ 3%)
+            - **Technical Debt:** ${{ steps.analysis.outputs.debt_minutes }} minutes
+          body_todo: |
+            - [ ] **Code Smells:** ${{ steps.analysis.outputs.code_smells }} issues
+            - [ ] **Bugs:** ${{ steps.analysis.outputs.bugs }} detected
+            - [ ] **Security Hotspots:** 0
+            - [ ] **Coverage:** 92% (target: ≥ 80%)
+          footer_result: "${{ steps.analysis.outputs.complexity_score <= 10 && steps.analysis.outputs.duplication_percent <= 3 && steps.analysis.outputs.bugs == 0 && '✅ Quality Gate Passed' || '❌ Quality Gate Failed' }}"
+          footer_advise: "${{ steps.analysis.outputs.code_smells > 10 && 'Consider refactoring to reduce code smells' || 'Code quality meets standards' }}"
+```
+
+### Example 7: Using Variables with JSON Format
+
+```yaml
+name: Custom Variables Example
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+      version:
+        description: 'Application version'
+        required: true
+        default: '1.0.0'
+
+jobs:
+  custom-vars:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Generate Dynamic Content
+        id: vars
+        run: |
+          # Generate dynamic variables
+          CURRENT_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          DEPLOYMENT_ID=$(echo ${{ github.run_id }}${{ github.run_attempt }} | md5sum | cut -c1-8)
+          
+          # Create JSON variables
+          echo "variables={\"DEPLOYMENT_TIME\":\"$CURRENT_TIME\",\"DEPLOYMENT_ID\":\"$DEPLOYMENT_ID\",\"RUNNER_OS\":\"${{ runner.os }}\",\"WORKFLOW_URL\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" >> $GITHUB_OUTPUT
+
+      - name: Post Custom Deployment Message
+        uses: Malnati/pr-comment@v4.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pr_number: ${{ github.event.pull_request.number }}
+          header_actor: "Custom Deployment Bot"
+          header_title: "🛠️ Manual Deployment Triggered"
+          header_subject: "${{ github.event.inputs.environment }} - v${{ github.event.inputs.version }}"
+          body_message: "A manual deployment has been initiated with custom parameters."
+          body_scope: |
+            - **Environment:** ${{ github.event.inputs.environment }}
+            - **Version:** ${{ github.event.inputs.version }}
+            - **Deployment ID:** ${{ fromJson(steps.vars.outputs.variables).DEPLOYMENT_ID }}
+            - **Triggered At:** ${{ fromJson(steps.vars.outputs.variables).DEPLOYMENT_TIME }}
+            - **Runner OS:** ${{ fromJson(steps.vars.outputs.variables).RUNNER_OS }}
+          body_todo: |
+            - [ ] Environment validation
+            - [ ] Smoke tests execution
+            - [ ] Health check verification
+            - [ ] Rollback plan ready
+          footer_result: "🚀 Deployment Queued"
+          footer_advise: "Monitor progress at: ${{ fromJson(steps.vars.outputs.variables).WORKFLOW_URL }}"
+```
+
+### Example 8: Multi-Step Workflow with Output Sharing
+
+```yaml
+name: Complete CI/CD Pipeline
 on:
   pull_request:
     types: [opened, synchronize]
 
 jobs:
-  quality-checks:
+  lint:
     runs-on: ubuntu-latest
+    outputs:
+      score: ${{ steps.lint-check.outputs.score }}
+      issues: ${{ steps.lint-check.outputs.issues }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Run Linters
-        id: lint
+      - name: Run Linter
+        id: lint-check
         run: |
-          echo "lint_score=95" >> $GITHUB_OUTPUT
-          echo "lint_issues=3" >> $GITHUB_OUTPUT
+          echo "score=92" >> $GITHUB_OUTPUT
+          echo "issues=8" >> $GITHUB_OUTPUT
 
+  test:
+    runs-on: ubuntu-latest
+    outputs:
+      coverage: ${{ steps.test-coverage.outputs.coverage }}
+      passed: ${{ steps.test-coverage.outputs.passed }}
+      total: ${{ steps.test-coverage.outputs.total }}
+    steps:
       - name: Run Tests
-        id: test
+        id: test-coverage
         run: |
-          echo "test_coverage=88" >> $GITHUB_OUTPUT
-          echo "tests_passed=200" >> $GITHUB_OUTPUT
-          echo "tests_failed=2" >> $GITHUB_OUTPUT
+          echo "coverage=87" >> $GITHUB_OUTPUT
+          echo "passed=198" >> $GITHUB_OUTPUT
+          echo "total=200" >> $GITHUB_OUTPUT
 
+  security:
+    runs-on: ubuntu-latest
+    outputs:
+      vulnerabilities: ${{ steps.security-scan.outputs.vulnerabilities }}
+      score: ${{ steps.security-scan.outputs.score }}
+    steps:
       - name: Run Security Scan
-        id: security
+        id: security-scan
         run: |
           echo "vulnerabilities=0" >> $GITHUB_OUTPUT
-          echo "security_score=100" >> $GITHUB_OUTPUT
+          echo "score=95" >> $GITHUB_OUTPUT
 
-      - name: Post Quality Gate Summary
+  summary:
+    needs: [lint, test, security]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Post Comprehensive Report
         uses: Malnati/pr-comment@v4.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
-          header_actor: "Quality Gate Bot"
-          header_title: "🏗️ Quality Gate Results"
-          header_subject: "PR #${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}"
-          body_message: "All quality checks have been completed for this pull request."
+          header_actor: "CI/CD Pipeline"
+          header_title: "🏗️ Pipeline Execution Summary"
+          header_subject: "PR #${{ github.event.pull_request.number }}"
+          body_message: "All pipeline stages have completed execution. Here's the comprehensive report:"
           body_scope: |
-            - **Author:** @${{ github.event.pull_request.user.login }}
-            - **Branch:** ${{ github.event.pull_request.head.ref }}
-            - **Changed Files:** ${{ github.event.pull_request.changed_files }}
+            - **Linting Score:** ${{ needs.lint.outputs.score }}/100 (${{ needs.lint.outputs.issues }} issues)
+            - **Test Coverage:** ${{ needs.test.outputs.coverage }}% (${{ needs.test.outputs.passed }}/${{ needs.test.outputs.total }} tests passed)
+            - **Security Score:** ${{ needs.security.outputs.score }}/100 (${{ needs.security.outputs.vulnerabilities }} vulnerabilities)
+            - **Overall Status:** ${{ needs.lint.outputs.score >= 90 && needs.test.outputs.coverage >= 80 && needs.security.outputs.vulnerabilities == 0 && '✅ All Checks Passed' || '❌ Some Checks Failed' }}
           body_todo: |
-            - [ ] **Linting:** ${{ steps.lint.outputs.lint_score }}/100 (${{ steps.lint.outputs.lint_issues }} issues)
-            - [ ] **Test Coverage:** ${{ steps.test.outputs.test_coverage }}% (target: 80%)
-            - [ ] **Tests:** ${{ steps.test.outputs.tests_passed }}/${{ steps.test.outputs.tests_passed + steps.test.outputs.tests_failed }} passed
-            - [ ] **Security:** ${{ steps.security.outputs.security_score }}/100 (${{ steps.security.outputs.vulnerabilities }} vulnerabilities)
-          footer_result: "${{ steps.lint.outputs.lint_score >= 90 && steps.test.outputs.test_coverage >= 80 && steps.security.outputs.vulnerabilities == 0 && '✅ Quality Gate Passed' || '❌ Quality Gate Failed' }}"
-          footer_advise: "${{ steps.lint.outputs.lint_score >= 90 && steps.test.outputs.test_coverage >= 80 && steps.security.outputs.vulnerabilities == 0 && 'Ready for human review' || 'Please address the issues above before merging' }}"
+            - [ ] **Code Quality:** ${{ needs.lint.outputs.score >= 90 && '✅' || '❌' }} Linting standards met
+            - [ ] **Test Coverage:** ${{ needs.test.outputs.coverage >= 80 && '✅' || '❌' }} Minimum coverage achieved
+            - [ ] **Security:** ${{ needs.security.outputs.vulnerabilities == 0 && '✅' || '❌' }} No vulnerabilities found
+            - [ ] **Build:** ✅ Successful
+          footer_result: "${{ needs.lint.outputs.score >= 90 && needs.test.outputs.coverage >= 80 && needs.security.outputs.vulnerabilities == 0 && '🚀 Ready for Review' || '⚠️ Needs Attention' }}"
+          footer_advise: "${{ needs.lint.outputs.score >= 90 && needs.test.outputs.coverage >= 80 && needs.security.outputs.vulnerabilities == 0 && 'Assign reviewers for final approval' || 'Address the failing checks before proceeding' }}"
+          template_path: ".github/templates/pipeline-summary.md"
+```
+
+### Example 9: Error/Exception Reporting
+
+```yaml
+name: Error Notification
+on:
+  workflow_run:
+    workflows: ["Build and Test"]
+    types:
+      - completed
+
+jobs:
+  error-report:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Extract Error Details
+        id: errors
+        run: |
+          # Simulate error extraction
+          echo "failed_step=test_execution" >> $GITHUB_OUTPUT
+          echo "error_code=137" >> $GITHUB_OUTPUT
+          echo "error_message=Test suite timeout after 30 minutes" >> $GITHUB_OUTPUT
+          echo "log_url=https://github.com/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}" >> $GITHUB_OUTPUT
+
+      - name: Post Error Report
+        uses: Malnati/pr-comment@v4.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pr_number: 123  # Target PR number from context
+          header_actor: "Error Monitoring System"
+          header_title: "🚨 Pipeline Failure Detected"
+          header_subject: "Workflow: ${{ github.event.workflow_run.name }}"
+          body_message: "The CI/CD pipeline has failed. Immediate attention is required."
+          body_scope: |
+            - **Failed Step:** ${{ steps.errors.outputs.failed_step }}
+            - **Error Code:** ${{ steps.errors.outputs.error_code }}
+            - **Error Message:** ${{ steps.errors.outputs.error_message }}
+            - **Workflow Run:** #${{ github.event.workflow_run.run_number }}
+            - **Run ID:** ${{ github.event.workflow_run.id }}
+          body_todo: |
+            - [ ] Investigate the root cause
+            - [ ] Check system resources
+            - [ ] Review recent changes
+            - [ ] Update timeout settings if needed
+          footer_result: "❌ Pipeline Failed"
+          footer_advise: "Review logs at: ${{ steps.errors.outputs.log_url }} and retry after fixing the issue."
+```
+
+### Example 10: Custom Template with Advanced Markdown Features
+
+```yaml
+name: Advanced Template Usage
+on:
+  release:
+    types: [published]
+
+jobs:
+  release-notes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Post Release Announcement
+        uses: Malnati/pr-comment@v4.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pr_number: ${{ github.event.release.target_commitish }}  # Could be linked to a PR
+          header_actor: "Release Manager"
+          header_title: "🎉 New Version Released!"
+          header_subject: "v${{ github.event.release.tag_name }}"
+          body_message: "A new version has been published and is now available."
+          body_scope: |
+            - **Version:** ${{ github.event.release.tag_name }}
+            - **Release Name:** ${{ github.event.release.name }}
+            - **Author:** @${{ github.event.release.author.login }}
+            - **Pre-release:** ${{ github.event.release.prerelease }}
+            - **Draft:** ${{ github.event.release.draft }}
+          footer_result: "✅ Published Successfully"
+          footer_advise: "Update dependencies and notify stakeholders."
+          template_path: ".github/templates/release-announcement.md"
+```
+
+**Custom Template `.github/templates/release-announcement.md`:**
+```markdown
+# 🎊 Release Announcement: $SUBJECT
+**Published by:** @$ACTOR  
+**Status:** ${{ github.event.release.prerelease && 'Pre-release' || 'Stable Release' }}
+
+## 🚀 What's New
+$BODY_MESSAGE
+
+## 📋 Release Details
+$BODY_SCOPE_BLOCK
+
+## 🔗 Quick Links
+- [View Release Notes](${{ github.event.release.html_url }})
+- [Download Assets](${{ github.event.release.html_url }})
+- [Compare Changes](https://github.com/${{ github.repository }}/compare/previous...${{ github.event.release.tag_name }})
+
+## 🎯 Next Steps
+1. Update your local repositories
+2. Review breaking changes
+3. Test in staging environment
+4. Schedule production deployment
+
+---
+**Release Status:** $FOOTER_BLOCK  
+**Published:** ${{ github.event.release.published_at }}
 ```
 
 ---
