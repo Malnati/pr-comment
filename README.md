@@ -1,21 +1,21 @@
 <!-- README.md -->
-# pr-comment
+# PR Comment Pro
 
 <div align="center">
 
-# 💬 PR Comment Template
+# 💬 PR Comment Pro
 
-[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-PR%20Comment%20Template-6f42c1?style=for-the-badge&logo=github)](https://github.com/marketplace/actions/pr-comment-template)
+[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-PR%20Comment%20Pro-6f42c1?style=for-the-badge&logo=github)](https://github.com/marketplace/actions/pr-comment-pro)
 [![Version](https://img.shields.io/github/v/release/Malnati/pr-comment?style=for-the-badge&color=purple)](https://github.com/Malnati/pr-comment/releases)
 [![License](https://img.shields.io/github/license/Malnati/pr-comment?style=for-the-badge&color=blue)](LICENSE)
 
-**Standardize, Automate, and Beautify your Pull Request feedback.**
+**Standardize, Automate, and Beautify your Pull Request feedback with flexible templates and sticky comments.**
 
 <p align="center">
   <a href="#-features">Features</a> •
-  <a href="#-basic-usage">Basic Usage</a> •
-  <a href="#-advanced-usage-custom-templates">Custom Templates</a> •
+  <a href="#-quick-start">Quick Start</a> •
   <a href="#-usage-examples">Usage Examples</a> •
+  <a href="#-template-engine">Template Engine</a> •
   <a href="#-inputs">Inputs</a>
 </p>
 
@@ -25,106 +25,68 @@
 
 ## 🚀 About
 
-**PR Comment Template** is a GitHub Action designed for teams that value clear communication. It allows you to automatically post structured comments (Header, Body, Footer) in your PRs, ensuring that crucial information about deployments, tests, and validations doesn't get lost.
+**PR Comment Pro v8.0.0** is a powerful GitHub Action that posts standardized comments on Pull Requests with advanced template support and "sticky" comment functionality. Unlike previous versions, it now uses a flexible variable substitution system with `envsubst`, allowing for unlimited custom variables in your templates.
 
 ### ✨ Key Features
 
-* **Standardization:** Ensure every PR has the same feedback format.
-* **Flexibility:** Use the modern default template or bring your own **Markdown**.
-* **Validation:** The system checks if your custom template contains the required variables.
-* **Context Separation:** Dedicated areas for Message, Scope (changes), and TODOs.
+* **🎨 Flexible Template Engine**: Use any Markdown template with `${VARIABLE}` substitution
+* **📌 Sticky Comments**: Update existing comments instead of creating new ones
+* **📝 Raw Mode**: Post direct text without templates when needed
+* **🔧 Variable Injection**: Unlimited custom variables via environment or JSON
+* **⚡ Performance**: Composite action architecture for faster execution
+* **🔒 Validation**: Automatic template and permission validation
 
 ---
 
-## 📦 Basic Usage
+## 📦 Quick Start
 
-Ideal for those who want to get started quickly using the default design (purple/clean theme).
+### Basic Usage with Default Template
+
+```yaml
+name: Post PR Comment
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Post PR Comment
+        uses: Malnati/pr-comment@v8.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pr_number: ${{ github.event.pull_request.number }}
+```
+
+### Using Custom Template with Variables
 
 ```yaml
 steps:
-  - name: Post Standard Comment
-    uses: Malnati/pr-comment@v4.0.2
-    with:
-      token: ${{ secrets.GITHUB_TOKEN }}
-      pr_number: ${{ github.event.pull_request.number }}
-      header_actor: ${{ github.actor }}
-      header_title: "🧪 Testing default PR message"
-      header_subject: "Branch Synchronization"
-      body_message: "The synchronization was successfully performed by the bot."
-      body_scope: |
-        - Base: `main`
-        - Head: `develop`
-      footer_result: "Success"
-```
-
----
-
-## 🎨 Advanced Usage: Custom Templates
-
-You can inject your own Markdown file to have full control over layout, emojis, and structure.
-
-### 1. Create Your Template
-
-Add a file to your repository (e.g., `.github/templates/custom.md`). You **must** include the variables below:
-
-| Variable | Description |
-| :--- | :--- |
-| `$ACTOR` | The user who triggered the action (e.g., github.actor) |
-| `$SUBJECT` | The comment subject |
-| `$BODY_MESSAGE` | The main message |
-| `$BODY_SCOPE_BLOCK` | Formatted scope list |
-| `$BODY_TODO_BLOCK` | Formatted todo list |
-| `$FOOTER_BLOCK` | The footer with results |
-
-**Example `custom.md` file:**
-
-```markdown
-# 🎨 Deployment Report
-**Author:** @$ACTOR | **Action:** $SUBJECT
-
-> $BODY_MESSAGE
-
-<details open>
-<summary>📂 Change Scope</summary>
-$BODY_SCOPE_BLOCK
-</details>
-
----
-$FOOTER_BLOCK
-```
-
-### 2. Configure the Workflow
-
-You need to use `actions/checkout` so the Action can read your local template file.
-
-```yaml
-steps:
-  - name: Checkout Repository
-    uses: actions/checkout@v4
-
   - name: Post Custom Comment
-    uses: Malnati/pr-comment@v4.0.2
+    uses: Malnati/pr-comment@v8.0.0
     with:
       token: ${{ secrets.GITHUB_TOKEN }}
       pr_number: ${{ github.event.pull_request.number }}
-      header_actor: ${{ github.actor }}
-      header_title: "🚀 Staging Deploy"
-      header_subject: "Automatic Deployment"
-      body_message: "The staging environment has been updated."
-      body_scope: "- Version: v1.2.0"
-      
-      # Relative path to your file
-      template_path: ".github/templates/custom.md"
+      template_path: ".github/templates/review.md"
+    env:
+      PR_TITLE: "${{ github.event.pull_request.title }}"
+      PR_AUTHOR: "@${{ github.event.pull_request.user.login }}"
+      REVIEW_STATUS: "Pending"
+      REVIEW_DATE: "$(date +'%Y-%m-%d')"
 ```
 
 ---
 
 ## 📚 Usage Examples
 
-### Example 1: Basic Usage with All Optional Fields
+### Example 1: Basic Usage with Variables
 
 ```yaml
-name: Complete PR Notification
+name: Automated PR Notification
 on:
   pull_request:
     types: [opened]
@@ -133,357 +95,271 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Post Complete Notification
-        uses: Malnati/pr-comment@v4.0.2
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: Post Welcome Comment
+        uses: Malnati/pr-comment@v8.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
-          header_actor: ${{ github.actor }}
-          header_title: "📢 New Pull Request Created"
-          header_subject: "Automated Welcome Message"
-          body_message: "Thank you for creating this pull request! Here's what happens next:"
-          body_scope: |
-            - **PR Title:** ${{ github.event.pull_request.title }}
-            - **Author:** @${{ github.event.pull_request.user.login }}
-            - **Branch:** ${{ github.event.pull_request.head.ref }} → ${{ github.event.pull_request.base.ref }}
-            - **Files Changed:** ${{ github.event.pull_request.changed_files }}
-          body_todo: |
-            - [ ] Code review by team members
-            - [ ] CI/CD pipeline passes
-            - [ ] Tests executed successfully
-            - [ ] Documentation updated if needed
-          footer_result: "👋 Welcome!"
-          footer_advise: "Please wait for reviews and CI checks to complete before merging."
+          template_path: ".github/templates/welcome.md"
+        env:
+          PR_TITLE: "${{ github.event.pull_request.title }}"
+          PR_AUTHOR: "@${{ github.event.pull_request.user.login }}"
+          BRANCH_NAME: "${{ github.event.pull_request.head.ref }}"
+          BASE_BRANCH: "${{ github.event.pull_request.base.ref }}"
+          CREATED_AT: "${{ github.event.pull_request.created_at }}"
+          CHANGED_FILES: "${{ github.event.pull_request.changed_files }}"
 ```
 
-### Example 2: Minimal Configuration (Only Required Fields)
+**Template `.github/templates/welcome.md`:**
+```markdown
+# 👋 Welcome to PR #${PR_NUMBER}
+
+**Title:** ${PR_TITLE}  
+**Author:** ${PR_AUTHOR}  
+**Branch:** ${BRANCH_NAME} → ${BASE_BRANCH}  
+**Created:** ${CREATED_AT}
+
+## 🎯 What happens next?
+
+1. **Automated Checks** will run within a few minutes
+2. **Reviewers** will be automatically assigned
+3. **CI/CD Pipeline** will validate your changes
+
+## 📊 Quick Stats
+- **Files Changed:** ${CHANGED_FILES}
+- **Additions:** ${ADDITIONS}
+- **Deletions:** ${DELETIONS}
+
+---
+
+*This comment was automatically generated by PR Comment Pro*
+```
+
+### Example 2: Sticky Comments for Status Updates
 
 ```yaml
-name: Simple PR Comment
+name: CI/CD Status Updates
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
+
+jobs:
+  update-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update PR Status
+        uses: Malnati/pr-comment@v8.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pr_number: ${{ github.event.client_payload.pr_number }}
+          template_path: ".github/templates/ci-status.md"
+          message_id: "ci-status-${{ github.event.client_payload.pr_number }}"
+        env:
+          WORKFLOW_NAME: "${{ github.event.workflow_run.name }}"
+          WORKFLOW_STATUS: "${{ github.event.workflow_run.conclusion }}"
+          RUN_NUMBER: "${{ github.event.workflow_run.run_number }}"
+          RUN_URL: "${{ github.event.workflow_run.html_url }}"
+          COMMIT_SHA: "${{ github.event.workflow_run.head_sha }}"
+          DURATION: "${{ fromJSON(format('{{\"seconds\":\"{0}\"}}', github.event.workflow_run.updated_at - github.event.workflow_run.run_started_at)).seconds }}s"
+          TIMESTAMP: "$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+```
+
+### Example 3: Raw Mode (No Template)
+
+```yaml
+name: Direct Message Post
 on:
   pull_request:
     types: [labeled]
 
 jobs:
-  simple-comment:
+  label-notification:
     runs-on: ubuntu-latest
     steps:
-      - name: Post Minimal Comment
-        uses: Malnati/pr-comment@v4.0.2
+      - name: Generate Custom Message
+        run: |
+          MESSAGE=$(cat << EOF
+          ## 🏷️ Label Added: ${{ github.event.label.name }}
+          
+          **Action:** Label applied to PR #${{ github.event.pull_request.number }}
+          **By:** @${{ github.actor }}
+          **Time:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          ### Next Steps:
+          1. Review the label context
+          2. Update documentation if needed
+          3. Notify relevant team members
+          
+          ---
+          *Automated notification*
+          EOF
+          )
+          echo "BODY_MESSAGE<<EOF" >> $GITHUB_ENV
+          echo "$MESSAGE" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+      - name: Post Raw Message
+        uses: Malnati/pr-comment@v8.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
-          header_actor: "Automation Bot"
-          header_title: "🏷️ Label Added"
-          header_subject: "Label: ${{ github.event.label.name }}"
-          body_message: "A new label has been added to this pull request."
+          use_raw_body: "true"
+        env:
+          BODY_MESSAGE: ${{ env.BODY_MESSAGE }}
 ```
 
-### Example 3: Deployment Status with Custom Template
+### Example 4: JSON Variables Format
 
 ```yaml
-name: Deployment Notification
+name: Quality Gate with JSON Variables
 on:
-  deployment_status:
-    types: [created]
+  pull_request:
+    types: [synchronize]
 
 jobs:
-  deploy-notify:
+  quality-gate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        
+      - name: Run Quality Checks
+        id: quality
+        run: |
+          # Simulate quality checks
+          echo 'variables={"CODE_COVERAGE":"92","TEST_PASS_RATE":"98","LINT_SCORE":"95","SECURITY_SCORE":"100","COMPLEXITY_SCORE":"7.2","MAINTAINABILITY_INDEX":"85"}' >> $GITHUB_OUTPUT
+          
+      - name: Post Quality Report
+        uses: Malnati/pr-comment@v8.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pr_number: ${{ github.event.pull_request.number }}
+          template_path: ".github/templates/quality-gate.md"
+          message_id: "quality-report-${{ github.event.pull_request.number }}"
+        env:
+          PR_TITLE: "${{ github.event.pull_request.title }}"
+          PR_AUTHOR: "@${{ github.event.pull_request.user.login }}"
+          variables: ${{ steps.quality.outputs.variables }}
+```
 
-      - name: Post Deployment Update
-        uses: Malnati/pr-comment@v4.0.2
+### Example 5: Deployment Summary with Multiple Variables
+
+```yaml
+name: Deployment Summary
+on:
+  deployment_status:
+
+jobs:
+  deploy-summary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post Deployment Summary
+        uses: Malnati/pr-comment@v8.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.deployment.payload.pull_request.number }}
-          header_actor: "Deployment System"
-          header_title: "🚀 Deployment Initiated"
-          header_subject: "Environment: ${{ github.event.deployment.environment }}"
-          body_message: "Deployment process has started for the specified environment."
-          body_scope: |
-            - **Target:** ${{ github.event.deployment.environment }}
-            - **SHA:** ${{ github.event.deployment.sha }}
-            - **Task:** ${{ github.event.deployment.task }}
-            - **Ref:** ${{ github.event.deployment.ref }}
-          footer_result: "⏳ In Progress"
-          footer_advise: "Monitor deployment logs for real-time updates."
-          template_path: ".github/templates/deployment-template.md"
+          template_path: ".github/templates/deployment.md"
+        env:
+          variables: |
+            {
+              "ENVIRONMENT": "${{ github.event.deployment.environment }}",
+              "DEPLOYMENT_STATUS": "${{ github.event.deployment_status.state }}",
+              "TARGET_SHA": "${{ github.event.deployment.sha }}",
+              "DEPLOYMENT_ID": "${{ github.event.deployment.id }}",
+              "CREATED_AT": "${{ github.event.deployment.created_at }}",
+              "DEPLOYER": "@${{ github.event.deployment.creator.login }}",
+              "DEPLOYMENT_URL": "${{ github.event.deployment_status.target_url }}",
+              "TIMESTAMP": "$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            }
 ```
 
-### Example 4: Security Scan Results (Scope Only, No TODOs)
+**Template `.github/templates/deployment.md`:**
+```markdown
+# 🚀 Deployment to ${ENVIRONMENT}
 
-```yaml
-name: Security Analysis
-on:
-  pull_request:
-    types: [synchronize]
+**Status:** ${DEPLOYMENT_STATUS}  
+**Deployed by:** ${DEPLOYER}  
+**Deployment ID:** ${DEPLOYMENT_ID}  
+**Timestamp:** ${TIMESTAMP}
 
-jobs:
-  security:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run Security Scan
-        id: scan
-        run: |
-          # Simulate security scan results
-          echo "critical=0" >> $GITHUB_OUTPUT
-          echo "high=2" >> $GITHUB_OUTPUT
-          echo "medium=5" >> $GITHUB_OUTPUT
-          echo "low=3" >> $GITHUB_OUTPUT
+## 📋 Deployment Details
+- **Environment:** ${ENVIRONMENT}
+- **Target SHA:** ${TARGET_SHA:0:8}
+- **Created:** ${CREATED_AT}
+- **PR:** #${PR_NUMBER}
 
-      - name: Post Scan Results
-        uses: Malnati/pr-comment@v4.0.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          pr_number: ${{ github.event.pull_request.number }}
-          header_actor: "Security Scanner v2.1"
-          header_title: "🔒 Security Assessment"
-          header_subject: "Vulnerability Analysis"
-          body_message: "Automated security scan completed. Please review findings."
-          body_scope: |
-            - **Critical Issues:** ${{ steps.scan.outputs.critical }}
-            - **High Severity:** ${{ steps.scan.outputs.high }}
-            - **Medium Severity:** ${{ steps.scan.outputs.medium }}
-            - **Low Severity:** ${{ steps.scan.outputs.low }}
-            - **Total Findings:** ${{ steps.scan.outputs.critical + steps.scan.outputs.high + steps.scan.outputs.medium + steps.scan.outputs.low }}
-          footer_result: "⚠️ Action Required"
-          footer_advise: "Address high and critical severity issues before merging."
+## 🔗 Links
+- [Deployment Logs](${DEPLOYMENT_URL})
+- [Commit Details](https://github.com/${GITHUB_REPOSITORY}/commit/${TARGET_SHA})
+- [PR #${PR_NUMBER}](https://github.com/${GITHUB_REPOSITORY}/pull/${PR_NUMBER})
+
+## 📊 Health Check
+- [ ] Services responsive
+- [ ] Metrics normal
+- [ ] Error rates low
+- [ ] Performance optimal
+
+---
+
+*Last updated: ${TIMESTAMP} | PR Comment Pro v8.0.0*
 ```
 
-### Example 5: Test Results (TODOs Only, No Scope)
+### Example 6: Code Review Template with Conditional Logic
 
 ```yaml
-name: Test Execution Report
-on:
-  pull_request:
-    types: [closed]
-
-jobs:
-  test-report:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Generate Test Results
-        id: tests
-        run: |
-          echo "unit_passed=145" >> $GITHUB_OUTPUT
-          echo "unit_failed=3" >> $GITHUB_OUTPUT
-          echo "integration_passed=89" >> $GITHUB_OUTPUT
-          echo "integration_failed=1" >> $GITHUB_OUTPUT
-          echo "e2e_passed=42" >> $GITHUB_OUTPUT
-          echo "e2e_failed=0" >> $GITHUB_OUTPUT
-
-      - name: Post Test Summary
-        uses: Malnati/pr-comment@v4.0.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          pr_number: ${{ github.event.pull_request.number }}
-          header_actor: "Test Automation Suite"
-          header_title: "🧪 Test Execution Report"
-          header_subject: "PR #${{ github.event.pull_request.number }}"
-          body_message: "All automated tests have been executed. Below are the results:"
-          body_todo: |
-            - [ ] **Unit Tests:** ${{ steps.tests.outputs.unit_passed }}/${{ steps.tests.outputs.unit_passed + steps.tests.outputs.unit_failed }} passed
-            - [ ] **Integration Tests:** ${{ steps.tests.outputs.integration_passed }}/${{ steps.tests.outputs.integration_passed + steps.tests.outputs.integration_failed }} passed
-            - [ ] **E2E Tests:** ${{ steps.tests.outputs.e2e_passed }}/${{ steps.tests.outputs.e2e_passed + steps.tests.outputs.e2e_failed }} passed
-            - [ ] **Overall Pass Rate:** ${{ format('{0:.1f}', (steps.tests.outputs.unit_passed + steps.tests.outputs.integration_passed + steps.tests.outputs.e2e_passed) / (steps.tests.outputs.unit_passed + steps.tests.outputs.unit_failed + steps.tests.outputs.integration_passed + steps.tests.outputs.integration_failed + steps.tests.outputs.e2e_passed + steps.tests.outputs.e2e_failed) * 100) }}%
-          footer_result: "${{ steps.tests.outputs.unit_failed == 0 && steps.tests.outputs.integration_failed == 0 && steps.tests.outputs.e2e_failed == 0 && '✅ All Tests Passed' || '❌ Some Tests Failed' }}"
-          footer_advise: "${{ steps.tests.outputs.unit_failed == 0 && steps.tests.outputs.integration_failed == 0 && steps.tests.outputs.e2e_failed == 0 && 'Ready for deployment' || 'Fix failing tests before proceeding' }}"
-```
-
-### Example 6: Code Quality Report with Complex Variables
-
-```yaml
-name: Code Quality Gate
-on:
-  pull_request:
-    types: [synchronize]
-
-jobs:
-  quality:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Analyze Code Quality
-        id: analysis
-        run: |
-          # Simulate code analysis
-          echo "complexity_score=7.2" >> $GITHUB_OUTPUT
-          echo "maintainability_index=85" >> $GITHUB_OUTPUT
-          echo "duplication_percent=1.5" >> $GITHUB_OUTPUT
-          echo "code_smells=12" >> $GITHUB_OUTPUT
-          echo "bugs=0" >> $GITHUB_OUTPUT
-          echo "debt_minutes=45" >> $GITHUB_OUTPUT
-
-      - name: Post Quality Report
-        uses: Malnati/pr-comment@v4.0.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          pr_number: ${{ github.event.pull_request.number }}
-          header_actor: "SonarQube Analyzer"
-          header_title: "📊 Code Quality Report"
-          header_subject: "Quality Gate Analysis"
-          body_message: "Code quality analysis completed. Metrics compared against organization standards."
-          body_scope: |
-            - **Cyclomatic Complexity:** ${{ steps.analysis.outputs.complexity_score }} (target: ≤ 10)
-            - **Maintainability Index:** ${{ steps.analysis.outputs.maintainability_index }}/100
-            - **Duplication:** ${{ steps.analysis.outputs.duplication_percent }}% (target: ≤ 3%)
-            - **Technical Debt:** ${{ steps.analysis.outputs.debt_minutes }} minutes
-          body_todo: |
-            - [ ] **Code Smells:** ${{ steps.analysis.outputs.code_smells }} issues
-            - [ ] **Bugs:** ${{ steps.analysis.outputs.bugs }} detected
-            - [ ] **Security Hotspots:** 0
-            - [ ] **Coverage:** 92% (target: ≥ 80%)
-          footer_result: "${{ steps.analysis.outputs.complexity_score <= 10 && steps.analysis.outputs.duplication_percent <= 3 && steps.analysis.outputs.bugs == 0 && '✅ Quality Gate Passed' || '❌ Quality Gate Failed' }}"
-          footer_advise: "${{ steps.analysis.outputs.code_smells > 10 && 'Consider refactoring to reduce code smells' || 'Code quality meets standards' }}"
-```
-
-### Example 7: Using Variables with JSON Format
-
-```yaml
-name: Custom Variables Example
-on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Target environment'
-        required: true
-        default: 'staging'
-      version:
-        description: 'Application version'
-        required: true
-        default: '1.0.0'
-
-jobs:
-  custom-vars:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Generate Dynamic Content
-        id: vars
-        run: |
-          # Generate dynamic variables
-          CURRENT_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          DEPLOYMENT_ID=$(echo ${{ github.run_id }}${{ github.run_attempt }} | md5sum | cut -c1-8)
-          
-          # Create JSON variables
-          echo "variables={\"DEPLOYMENT_TIME\":\"$CURRENT_TIME\",\"DEPLOYMENT_ID\":\"$DEPLOYMENT_ID\",\"RUNNER_OS\":\"${{ runner.os }}\",\"WORKFLOW_URL\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" >> $GITHUB_OUTPUT
-
-      - name: Post Custom Deployment Message
-        uses: Malnati/pr-comment@v4.0.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          pr_number: ${{ github.event.pull_request.number }}
-          header_actor: "Custom Deployment Bot"
-          header_title: "🛠️ Manual Deployment Triggered"
-          header_subject: "${{ github.event.inputs.environment }} - v${{ github.event.inputs.version }}"
-          body_message: "A manual deployment has been initiated with custom parameters."
-          body_scope: |
-            - **Environment:** ${{ github.event.inputs.environment }}
-            - **Version:** ${{ github.event.inputs.version }}
-            - **Deployment ID:** ${{ fromJson(steps.vars.outputs.variables).DEPLOYMENT_ID }}
-            - **Triggered At:** ${{ fromJson(steps.vars.outputs.variables).DEPLOYMENT_TIME }}
-            - **Runner OS:** ${{ fromJson(steps.vars.outputs.variables).RUNNER_OS }}
-          body_todo: |
-            - [ ] Environment validation
-            - [ ] Smoke tests execution
-            - [ ] Health check verification
-            - [ ] Rollback plan ready
-          footer_result: "🚀 Deployment Queued"
-          footer_advise: "Monitor progress at: ${{ fromJson(steps.vars.outputs.variables).WORKFLOW_URL }}"
-```
-
-### Example 8: Multi-Step Workflow with Output Sharing
-
-```yaml
-name: Complete CI/CD Pipeline
+name: Automated Code Review
 on:
   pull_request:
     types: [opened, synchronize]
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    outputs:
-      score: ${{ steps.lint-check.outputs.score }}
-      issues: ${{ steps.lint-check.outputs.issues }}
-    steps:
-      - name: Run Linter
-        id: lint-check
-        run: |
-          echo "score=92" >> $GITHUB_OUTPUT
-          echo "issues=8" >> $GITHUB_OUTPUT
-
-  test:
-    runs-on: ubuntu-latest
-    outputs:
-      coverage: ${{ steps.test-coverage.outputs.coverage }}
-      passed: ${{ steps.test-coverage.outputs.passed }}
-      total: ${{ steps.test-coverage.outputs.total }}
-    steps:
-      - name: Run Tests
-        id: test-coverage
-        run: |
-          echo "coverage=87" >> $GITHUB_OUTPUT
-          echo "passed=198" >> $GITHUB_OUTPUT
-          echo "total=200" >> $GITHUB_OUTPUT
-
-  security:
-    runs-on: ubuntu-latest
-    outputs:
-      vulnerabilities: ${{ steps.security-scan.outputs.vulnerabilities }}
-      score: ${{ steps.security-scan.outputs.score }}
-    steps:
-      - name: Run Security Scan
-        id: security-scan
-        run: |
-          echo "vulnerabilities=0" >> $GITHUB_OUTPUT
-          echo "score=95" >> $GITHUB_OUTPUT
-
-  summary:
-    needs: [lint, test, security]
+  code-review:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Post Comprehensive Report
-        uses: Malnati/pr-comment@v4.0.2
+        
+      - name: Run Analysis
+        id: analysis
+        run: |
+          echo "CODE_COVERAGE=88" >> $GITHUB_ENV
+          echo "LINT_ISSUES=3" >> $GITHUB_ENV
+          echo "SECURITY_ISSUES=0" >> $GITHUB_ENV
+          echo "COMPLEXITY_SCORE=6.7" >> $GITHUB_ENV
+          
+      - name: Post Review
+        uses: Malnati/pr-comment@v8.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
-          header_actor: "CI/CD Pipeline"
-          header_title: "🏗️ Pipeline Execution Summary"
-          header_subject: "PR #${{ github.event.pull_request.number }}"
-          body_message: "All pipeline stages have completed execution. Here's the comprehensive report:"
-          body_scope: |
-            - **Linting Score:** ${{ needs.lint.outputs.score }}/100 (${{ needs.lint.outputs.issues }} issues)
-            - **Test Coverage:** ${{ needs.test.outputs.coverage }}% (${{ needs.test.outputs.passed }}/${{ needs.test.outputs.total }} tests passed)
-            - **Security Score:** ${{ needs.security.outputs.score }}/100 (${{ needs.security.outputs.vulnerabilities }} vulnerabilities)
-            - **Overall Status:** ${{ needs.lint.outputs.score >= 90 && needs.test.outputs.coverage >= 80 && needs.security.outputs.vulnerabilities == 0 && '✅ All Checks Passed' || '❌ Some Checks Failed' }}
-          body_todo: |
-            - [ ] **Code Quality:** ${{ needs.lint.outputs.score >= 90 && '✅' || '❌' }} Linting standards met
-            - [ ] **Test Coverage:** ${{ needs.test.outputs.coverage >= 80 && '✅' || '❌' }} Minimum coverage achieved
-            - [ ] **Security:** ${{ needs.security.outputs.vulnerabilities == 0 && '✅' || '❌' }} No vulnerabilities found
-            - [ ] **Build:** ✅ Successful
-          footer_result: "${{ needs.lint.outputs.score >= 90 && needs.test.outputs.coverage >= 80 && needs.security.outputs.vulnerabilities == 0 && '🚀 Ready for Review' || '⚠️ Needs Attention' }}"
-          footer_advise: "${{ needs.lint.outputs.score >= 90 && needs.test.outputs.coverage >= 80 && needs.security.outputs.vulnerabilities == 0 && 'Assign reviewers for final approval' || 'Address the failing checks before proceeding' }}"
-          template_path: ".github/templates/pipeline-summary.md"
+          template_path: ".github/templates/code-review.md"
+        env:
+          PR_TITLE: "${{ github.event.pull_request.title }}"
+          PR_AUTHOR: "@${{ github.event.pull_request.user.login }}"
+          BRANCH: "${{ github.event.pull_request.head.ref }}"
+          CHANGED_FILES: "${{ github.event.pull_request.changed_files }}"
+          CODE_COVERAGE: "${{ env.CODE_COVERAGE }}"
+          LINT_ISSUES: "${{ env.LINT_ISSUES }}"
+          SECURITY_ISSUES: "${{ env.SECURITY_ISSUES }}"
+          COMPLEXITY_SCORE: "${{ env.COMPLEXITY_SCORE }}"
+          REVIEW_DATE: "$(date +'%Y-%m-%d')"
+          COVERAGE_STATUS: "${{ env.CODE_COVERAGE >= 80 && '✅' || '❌' }}"
+          SECURITY_STATUS: "${{ env.SECURITY_ISSUES == 0 && '✅' || '❌' }}"
+          LINT_STATUS: "${{ env.LINT_ISSUES <= 5 && '✅' || '⚠️' }}"
 ```
 
-### Example 9: Error/Exception Reporting
+### Example 7: Error Reporting with Sticky Updates
 
 ```yaml
-name: Error Notification
+name: Error Monitoring
 on:
   workflow_run:
-    workflows: ["Build and Test"]
+    workflows: ["Build"]
     types:
       - completed
 
@@ -492,135 +368,369 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Extract Error Details
-        id: errors
-        run: |
-          # Simulate error extraction
-          echo "failed_step=test_execution" >> $GITHUB_OUTPUT
-          echo "error_code=137" >> $GITHUB_OUTPUT
-          echo "error_message=Test suite timeout after 30 minutes" >> $GITHUB_OUTPUT
-          echo "log_url=https://github.com/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}" >> $GITHUB_OUTPUT
-
       - name: Post Error Report
-        uses: Malnati/pr-comment@v4.0.2
+        uses: Malnati/pr-comment@v8.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          pr_number: 123  # Target PR number from context
-          header_actor: "Error Monitoring System"
-          header_title: "🚨 Pipeline Failure Detected"
-          header_subject: "Workflow: ${{ github.event.workflow_run.name }}"
-          body_message: "The CI/CD pipeline has failed. Immediate attention is required."
-          body_scope: |
-            - **Failed Step:** ${{ steps.errors.outputs.failed_step }}
-            - **Error Code:** ${{ steps.errors.outputs.error_code }}
-            - **Error Message:** ${{ steps.errors.outputs.error_message }}
-            - **Workflow Run:** #${{ github.event.workflow_run.run_number }}
-            - **Run ID:** ${{ github.event.workflow_run.id }}
-          body_todo: |
-            - [ ] Investigate the root cause
-            - [ ] Check system resources
-            - [ ] Review recent changes
-            - [ ] Update timeout settings if needed
-          footer_result: "❌ Pipeline Failed"
-          footer_advise: "Review logs at: ${{ steps.errors.outputs.log_url }} and retry after fixing the issue."
+          pr_number: ${{ fromJson(github.event.workflow_run.head_commit.message).pr_number }}
+          template_path: ".github/templates/error-report.md"
+          message_id: "error-${{ github.event.workflow_run.id }}"
+        env:
+          variables: |
+            {
+              "WORKFLOW_NAME": "${{ github.event.workflow_run.name }}",
+              "RUN_NUMBER": "${{ github.event.workflow_run.run_number }}",
+              "RUN_ID": "${{ github.event.workflow_run.id }}",
+              "FAILED_AT": "${{ github.event.workflow_run.updated_at }}",
+              "RUN_URL": "${{ github.event.workflow_run.html_url }}",
+              "COMMIT_SHA": "${{ github.event.workflow_run.head_sha }}",
+              "ACTOR": "@${{ github.event.workflow_run.actor.login }}",
+              "ERROR_SEVERITY": "High",
+              "TIMESTAMP": "$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            }
 ```
 
-### Example 10: Custom Template with Advanced Markdown Features
+### Example 8: Custom Template with All GitHub Context
 
 ```yaml
-name: Advanced Template Usage
+name: Full Context Template
 on:
-  release:
-    types: [published]
+  pull_request_review:
+    types: [submitted]
 
 jobs:
-  release-notes:
+  review-notification:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Post Release Announcement
-        uses: Malnati/pr-comment@v4.0.2
+      - name: Post Review Notification
+        uses: Malnati/pr-comment@v8.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          pr_number: ${{ github.event.release.target_commitish }}  # Could be linked to a PR
-          header_actor: "Release Manager"
-          header_title: "🎉 New Version Released!"
-          header_subject: "v${{ github.event.release.tag_name }}"
-          body_message: "A new version has been published and is now available."
-          body_scope: |
-            - **Version:** ${{ github.event.release.tag_name }}
-            - **Release Name:** ${{ github.event.release.name }}
-            - **Author:** @${{ github.event.release.author.login }}
-            - **Pre-release:** ${{ github.event.release.prerelease }}
-            - **Draft:** ${{ github.event.release.draft }}
-          footer_result: "✅ Published Successfully"
-          footer_advise: "Update dependencies and notify stakeholders."
-          template_path: ".github/templates/release-announcement.md"
+          pr_number: ${{ github.event.pull_request.number }}
+          template_path: ".github/templates/review-notification.md"
+        env:
+          variables: |
+            {
+              "REVIEWER": "@${{ github.event.review.user.login }}",
+              "REVIEW_STATE": "${{ github.event.review.state }}",
+              "REVIEW_SUBMITTED_AT": "${{ github.event.review.submitted_at }}",
+              "REVIEW_BODY": "${{ github.event.review.body }}",
+              "PR_TITLE": "${{ github.event.pull_request.title }}",
+              "PR_AUTHOR": "@${{ github.event.pull_request.user.login }}",
+              "PR_NUMBER": "${{ github.event.pull_request.number }}",
+              "REPOSITORY": "${{ github.repository }}",
+              "EVENT_NAME": "${{ github.event_name }}",
+              "ACTOR": "@${{ github.actor }}",
+              "SHA": "${{ github.sha }}",
+              "REF": "${{ github.ref }}",
+              "WORKFLOW": "${{ github.workflow }}",
+              "RUN_ID": "${{ github.run_id }}",
+              "RUN_NUMBER": "${{ github.run_number }}",
+              "TIMESTAMP": "$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            }
 ```
 
-**Custom Template `.github/templates/release-announcement.md`:**
+---
+
+## 🎨 Template Engine
+
+### Variable Syntax
+
+The action uses `envsubst` for variable substitution. Use `${VARIABLE_NAME}` syntax in your templates:
+
 ```markdown
-# 🎊 Release Announcement: $SUBJECT
-**Published by:** @$ACTOR  
-**Status:** ${{ github.event.release.prerelease && 'Pre-release' || 'Stable Release' }}
+# ${PR_TITLE}
 
-## 🚀 What's New
-$BODY_MESSAGE
+**Author:** ${PR_AUTHOR}  
+**Branch:** ${BRANCH_NAME}  
+**Status:** ${REVIEW_STATUS}
 
-## 📋 Release Details
-$BODY_SCOPE_BLOCK
-
-## 🔗 Quick Links
-- [View Release Notes](${{ github.event.release.html_url }})
-- [Download Assets](${{ github.event.release.html_url }})
-- [Compare Changes](https://github.com/${{ github.repository }}/compare/previous...${{ github.event.release.tag_name }})
-
-## 🎯 Next Steps
-1. Update your local repositories
-2. Review breaking changes
-3. Test in staging environment
-4. Schedule production deployment
+${CUSTOM_MESSAGE}
 
 ---
-**Release Status:** $FOOTER_BLOCK  
-**Published:** ${{ github.event.release.published_at }}
+*Generated on ${TIMESTAMP}*
+```
+
+### Passing Variables
+
+You can pass variables in three ways:
+
+**1. Individual Environment Variables:**
+```yaml
+env:
+  PR_TITLE: "My Pull Request"
+  PR_AUTHOR: "@username"
+  STATUS: "Pending"
+```
+
+**2. JSON Object via `variables`:**
+```yaml
+env:
+  variables: |
+    {
+      "PR_TITLE": "My Pull Request",
+      "PR_AUTHOR": "@username",
+      "STATUS": "Pending"
+    }
+```
+
+**3. Mixed Approach:**
+```yaml
+env:
+  PR_TITLE: "My Pull Request"
+  variables: |
+    {
+      "PR_AUTHOR": "@username",
+      "STATUS": "Pending"
+    }
+```
+
+### Default Variables
+
+The action automatically provides these context variables:
+
+```bash
+# GitHub Context
+GITHUB_REPOSITORY
+GITHUB_SHA
+GITHUB_REF
+GITHUB_ACTOR
+GITHUB_EVENT_NAME
+GITHUB_WORKFLOW
+GITHUB_RUN_ID
+GITHUB_RUN_NUMBER
+
+# Action Inputs (converted to uppercase)
+PR_NUMBER
+TEMPLATE_PATH
+MESSAGE_ID
+USE_RAW_BODY
+```
+
+### Template Validation
+
+The action validates your template and shows detected variables:
+
+```bash
+Template with variables for envsubst detected.
+────────────────────────────────────────────────────────────
+To pass variables to the Action, use something similar to:
+
+  variables: |
+            {
+              "VAR1": "..."
+            }
+
+Detected variables: PR_TITLE PR_AUTHOR STATUS TIMESTAMP
+────────────────────────────────────────────────────────────
+```
+
+---
+
+## 🔧 Advanced Features
+
+### Sticky Comments
+
+Use `message_id` to create/update the same comment:
+
+```yaml
+with:
+  message_id: "deployment-status-pr-42"
+```
+
+**How it works:**
+1. First run: Creates comment with `<!-- pr-comment-id:deployment-status-pr-42 -->`
+2. Subsequent runs: Finds and updates the same comment
+3. Perfect for: Status updates, progress trackers, dynamic reports
+
+### Raw Mode
+
+Bypass templates entirely:
+
+```yaml
+with:
+  use_raw_body: "true"
+env:
+  BODY_MESSAGE: "Your raw Markdown content here"
+```
+
+### Default Template
+
+If no `template_path` is provided, uses `/templates/pr-comment.md`:
+
+```markdown
+## 🤖 Automated Comment
+
+This comment was automatically generated by **PR Comment Pro**.
+
+**Action:** ${GITHUB_WORKFLOW}
+**Triggered by:** @${GITHUB_ACTOR}
+**Event:** ${GITHUB_EVENT_NAME}
+**Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+---
+
+*To customize this message, provide a custom template using the `template_path` input.*
 ```
 
 ---
 
 ## ⚙️ Inputs
 
-All available configuration options.
-
-| Input | Required | Type | Default | Description |
-| :--- | :---: | :---: | :---: | :--- |
-| `token` | **Yes** | Secret | - | GitHub token (e.g., `secrets.GITHUB_TOKEN`). |
-| `pr_number` | **Yes** | Int | - | PR number where the comment will be posted. |
-| `header_actor` | **Yes** | String | - | Name of the user or bot authoring the message. |
-| `header_title` | **Yes** | String | - | Large title of the comment. |
-| `header_subject` | **Yes** | String | - | Subtitle or specific subject. |
-| `body_message` | **Yes** | Markdown | - | Main body of the message. |
-| `body_scope` | No | Markdown | `""` | List of affected items or scope. |
-| `body_todo` | No | Markdown | `""` | List of pending actions (checkboxes/bullets). |
-| `footer_result` | No | String | `""` | Final summary (e.g., "Success", "Failure"). |
-| `footer_advise` | No | String | `""` | Advice or next step. |
-| `template_path` | No | String | `""` | Relative path to a custom `.md` file. |
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `token` | ✅ Yes | - | GitHub token with `contents:read` and `pull-requests:write` permissions |
+| `pr_number` | ✅ Yes | - | Pull Request number to comment on |
+| `template_path` | ❌ No | `""` | Relative path to custom Markdown template file |
+| `use_raw_body` | ❌ No | `"false"` | If `"true"`, ignores templates and uses `BODY_MESSAGE` environment variable |
+| `message_id` | ❌ No | `""` | Unique ID for sticky comments (updates same comment instead of creating new) |
 
 ## 📤 Outputs
 
 | Output | Description |
-| :--- | :--- |
-| `comment_body` | The final processed Markdown content. Useful if you want to send the same text to Slack/Teams in subsequent steps. |
+|--------|-------------|
+| `comment_body` | The final processed Markdown content |
+
+---
+
+## 🔒 Permissions
+
+Required permissions in your workflow:
+
+```yaml
+permissions:
+  contents: read    # To read template files
+  pull-requests: write  # To post/update comments
+```
+
+Or using the token directly:
+```yaml
+with:
+  token: ${{ secrets.GITHUB_TOKEN }}  # Must have required scopes
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **"Template file not found"**
+   - Ensure `actions/checkout@v4` runs before this action
+   - Verify the path is correct relative to repository root
+
+2. **"BODY_MESSAGE is empty"**
+   - When using `use_raw_body="true"`, you must set `BODY_MESSAGE` environment variable
+
+3. **Variables not substituted**
+   - Ensure variables are passed via `env`
+   - Check variable names match `${VAR_NAME}` in template
+   - Variables are case-sensitive
+
+4. **Permission errors**
+   - Token needs `pull-requests:write` scope
+   - Check workflow permissions
+
+5. **Sticky comments not updating**
+   - Ensure same `message_id` is used
+   - Check API rate limits
+
+### Debug Mode
+
+Enable detailed logging:
+
+```yaml
+env:
+  ACTIONS_STEP_DEBUG: true
+  ACTIONS_RUNNER_DEBUG: true
+```
+
+---
+
+## 📋 Best Practices
+
+1. **Use Sticky IDs for Dynamic Content**
+   ```yaml
+   message_id: "ci-status-${{ github.event.pull_request.number }}"
+   ```
+
+2. **Version Control Your Templates**
+   ```bash
+   .github/templates/
+   ├── welcome.md
+   ├── code-review.md
+   ├── deployment.md
+   └── error-report.md
+   ```
+
+3. **Validate Templates Locally**
+   ```bash
+   # Check for undefined variables
+   envsubst -v < template.md
+   ```
+
+4. **Use JSON for Complex Data**
+   ```yaml
+   env:
+     variables: |
+       {
+         "METRICS": "{\"coverage\": 92, \"issues\": 3}",
+         "TAGS": "[\"backend\", \"api\", \"security\"]"
+       }
+   ```
+
+5. **Handle Special Characters**
+   ```yaml
+   env:
+     MULTILINE_TEXT: "First line\nSecond line\nThird line"
+     JSON_SAFE: "${{ toJson(vars) }}"
+   ```
+
+---
+
+## 🔄 Migration from v4.x to v8.0.0
+
+**Breaking Changes:**
+- Removed fixed variables (`$ACTOR`, `$SUBJECT`, etc.)
+- Now uses `${VAR_NAME}` syntax with `envsubst`
+- No automatic validation of specific variables
+
+**Migration Example:**
+
+**Before (v4.x):**
+```markdown
+# $TITLE
+**By:** $ACTOR
+$BODY_MESSAGE
+```
+
+**After (v8.0.0):**
+```markdown
+# ${PR_TITLE}
+**By:** ${GITHUB_ACTOR}
+${BODY_CONTENT}
+```
+
+```yaml
+env:
+  PR_TITLE: "${{ github.event.pull_request.title }}"
+  GITHUB_ACTOR: "@${{ github.actor }}"
+  BODY_CONTENT: "Your message here"
+```
+
+---
+
+## 📚 Additional Resources
+
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [envsubst Manual](https://linux.die.net/man/1/envsubst)
+- [GitHub REST API - Issues/Comments](https://docs.github.com/en/rest/issues/comments)
 
 ---
 
 <div align="center">
 
-<sub>Built with 🤍 by <a href="https://github.com/Malnati">Ricardo Malnati</a>.</sub>
+<sub>Built with 🤍 by <a href="https://github.com/Malnati">Ricardo Malnati</a></sub><br>
+<sub>Version 8.0.0 • Modern template engine with flexible variable substitution</sub>
 
 </div>
