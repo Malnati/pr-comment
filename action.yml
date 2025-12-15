@@ -1,6 +1,6 @@
 # Malnati/pr-comment@v8.0.2
 name: "PR Comment Pro"
-description: "Posta comentários padronizados e 'Sticky' em Pull Requests a partir de arquivos de conteúdo."
+description: "Posts standardized and sticky comments on Pull Requests using content files."
 author: "Ricardo Malnati"
 
 branding:
@@ -16,17 +16,17 @@ inputs:
     required: true
   
   template_path:
-    description: "Caminho do arquivo de conteúdo Markdown a ser publicado (já renderizado externamente)."
+    description: "Path to the Markdown content file to publish (already rendered externally)."
     required: true
     default: ""
 
   use_raw_body:
-    description: "Campo mantido por compatibilidade, atualmente ignorado. Conteúdo é sempre lido de arquivo."
+    description: "Field kept for compatibility; currently ignored. Content is always read from a file."
     required: false
     default: "false"
   
   message_id:
-    description: "ID único (invisível) para atualizar o mesmo comentário (Sticky Mode)."
+    description: "Unique (hidden) ID to update the same comment (Sticky Mode)."
     required: false
     default: ""
 
@@ -34,7 +34,7 @@ runs:
   using: "composite"
   steps:
   
-    - name: "🔧 Validação de Inputs Básicos"
+    - name: "🔧 Basic Input Validation"
       id: validate_inputs
       shell: bash
       env:
@@ -63,7 +63,7 @@ runs:
         echo "✅ Inputs validated."
         echo "::endgroup::"
         
-    - name: "🔐 Verificação de Permissões (Probe)"
+    - name: "🔐 Permission Check (Probe)"
       id: check_perms
       shell: bash
       env:
@@ -81,7 +81,7 @@ runs:
         fi
         echo "::endgroup::"
 
-    - name: "🆔 Renderização e Injeção de ID"
+    - name: "🆔 Rendering and ID Injection"
       id: render_template
       shell: bash
       env:
@@ -101,7 +101,7 @@ runs:
         echo "final_file=$FINAL_FILE" >> "$GITHUB_OUTPUT"
         echo "::endgroup::"
         
-    - name: "🔎 Sticky de Comentário Existente"
+    - name: "🔎 Existing Sticky Comment"
       id: find_comment
       if: inputs.message_id != ''
       shell: bash
@@ -127,7 +127,7 @@ runs:
         fi
         echo "::endgroup::"
 
-    - name: "🎯 Define URL e Método ISSUE/PR baseado na busca anterior"
+    - name: "🎯 Define ISSUE/PR URL and Method from Previous Search"
       id: target_setup
       shell: bash
       env:
@@ -146,7 +146,7 @@ runs:
         echo "url=$URL" >> "$GITHUB_OUTPUT"
         echo "method=$METHOD" >> "$GITHUB_OUTPUT"
 
-    - name: "📦 Converte o arquivo Markdown renderizado para JSON"
+    - name: "📦 Convert Rendered Markdown File to JSON"
       id: prepare_payload
       shell: bash
       env:

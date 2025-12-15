@@ -23,6 +23,6 @@ ${FOOTER_BLOCK}
   <sub>
     🤖 Developed by <a href="https://github.com/Malnati/pr-comment">Malnati/pr-comment</a> 🤍
     <br>
-    <i>Need a different layout? <a href="https://github.com/Malnati/pr-comment#%EF%B8%8F-templates-customizados">Customize here.</a></i>
+    <i>Need a different layout? <a href="https://github.com/Malnati/pr-comment#-template-engine">Customize here.</a></i>
   </sub>
 </div>

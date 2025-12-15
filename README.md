@@ -9,7 +9,7 @@
 [![Version](https://img.shields.io/github/v/release/Malnati/pr-comment?style=for-the-badge&color=purple)](https://github.com/Malnati/pr-comment/releases)
 [![License](https://img.shields.io/github/license/Malnati/pr-comment?style=for-the-badge&color=blue)](LICENSE)
 
-**Standardize, Automate, and Beautify your Pull Request feedback with flexible templates and sticky comments.**
+**Standardize, automate, and beautify your Pull Request feedback with flexible templates and sticky comments.**
 
 <p align="center">
   <a href="#-features">Features</a> •
@@ -25,7 +25,7 @@
 
 ## 🚀 About
 
-**PR Comment Pro v8.0.0** is a powerful GitHub Action that posts standardized comments on Pull Requests with advanced template support and "sticky" comment functionality. Unlike previous versions, it now uses a flexible variable substitution system with `envsubst`, allowing for unlimited custom variables in your templates.
+**PR Comment Pro v8.0.0** is a powerful GitHub Action that posts standardized comments on Pull Requests with advanced template support and "sticky" comment functionality. Unlike previous versions, it now uses a flexible variable-substitution system with `envsubst`, allowing unlimited custom variables in your templates.
 
 ### ✨ Key Features
 
