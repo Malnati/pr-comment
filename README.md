@@ -25,7 +25,7 @@
 
 ## 🚀 About
 
-**PR Comment Pro v8.0.0** is a powerful GitHub Action that posts standardized comments on Pull Requests with advanced template support and "sticky" comment functionality. Unlike previous versions, it now uses a flexible variable-substitution system with `envsubst`, allowing unlimited custom variables in your templates.
+**PR Comment Pro v8.0.2** is a powerful GitHub Action that posts standardized comments on Pull Requests with advanced template support and "sticky" comment functionality. Unlike previous versions, it now uses a flexible variable-substitution system with `envsubst`, allowing unlimited custom variables in your templates.
 
 ### ✨ Key Features
 
@@ -56,7 +56,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Post PR Comment
-        uses: Malnati/pr-comment@v8.0.0
+        uses: Malnati/pr-comment@v8.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
@@ -67,7 +67,7 @@ jobs:
 ```yaml
 steps:
   - name: Post Custom Comment
-    uses: Malnati/pr-comment@v8.0.0
+    uses: Malnati/pr-comment@v8.0.2
     with:
       token: ${{ secrets.GITHUB_TOKEN }}
       pr_number: ${{ github.event.pull_request.number }}
@@ -99,7 +99,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Post Welcome Comment
-        uses: Malnati/pr-comment@v8.0.0
+        uses: Malnati/pr-comment@v8.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
@@ -153,7 +153,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Update PR Status
-        uses: Malnati/pr-comment@v8.0.0
+        uses: Malnati/pr-comment@v8.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.client_payload.pr_number }}
@@ -204,7 +204,7 @@ jobs:
           echo "EOF" >> $GITHUB_ENV
           
       - name: Post Raw Message
-        uses: Malnati/pr-comment@v8.0.0
+        uses: Malnati/pr-comment@v8.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
@@ -235,7 +235,7 @@ jobs:
           echo 'variables={"CODE_COVERAGE":"92","TEST_PASS_RATE":"98","LINT_SCORE":"95","SECURITY_SCORE":"100","COMPLEXITY_SCORE":"7.2","MAINTAINABILITY_INDEX":"85"}' >> $GITHUB_OUTPUT
           
       - name: Post Quality Report
-        uses: Malnati/pr-comment@v8.0.0
+        uses: Malnati/pr-comment@v8.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
@@ -259,7 +259,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Post Deployment Summary
-        uses: Malnati/pr-comment@v8.0.0
+        uses: Malnati/pr-comment@v8.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.deployment.payload.pull_request.number }}
@@ -306,7 +306,7 @@ jobs:
 
 ---
 
-*Last updated: ${TIMESTAMP} | PR Comment Pro v8.0.0*
+*Last updated: ${TIMESTAMP} | PR Comment Pro v8.0.2*
 ```
 
 ### Example 6: Code Review Template with Conditional Logic
@@ -333,7 +333,7 @@ jobs:
           echo "COMPLEXITY_SCORE=6.7" >> $GITHUB_ENV
           
       - name: Post Review
-        uses: Malnati/pr-comment@v8.0.0
+        uses: Malnati/pr-comment@v8.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
@@ -369,7 +369,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Post Error Report
-        uses: Malnati/pr-comment@v8.0.0
+        uses: Malnati/pr-comment@v8.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ fromJson(github.event.workflow_run.head_commit.message).pr_number }}
@@ -403,7 +403,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Post Review Notification
-        uses: Malnati/pr-comment@v8.0.0
+        uses: Malnati/pr-comment@v8.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
@@ -688,7 +688,7 @@ env:
 
 ---
 
-## 🔄 Migration from v4.x to v8.0.0
+## 🔄 Migration from v4.x to v8.0.2
 
 **Breaking Changes:**
 - Removed fixed variables (`$ACTOR`, `$SUBJECT`, etc.)
@@ -704,7 +704,7 @@ env:
 $BODY_MESSAGE
 ```
 
-**After (v8.0.0):**
+**After (v8.0.2):**
 ```markdown
 # ${PR_TITLE}
 **By:** ${GITHUB_ACTOR}
