@@ -5,6 +5,12 @@
 
 # 💬 PR Comment Pro
 
+<img
+  src="https://raw.githubusercontent.com/Malnati/pr-comment/main/assets/pr-comment-avatar-smal.png"
+  alt="PR Comment Pro avatar"
+  width="140"
+/>
+
 [![GitHub Marketplace](https://img.shields.io/badge/Marketplace-PR%20Comment%20Pro-6f42c1?style=for-the-badge&logo=github)](https://github.com/marketplace/actions/pr-comment-pro)
 [![Version](https://img.shields.io/github/v/release/Malnati/pr-comment?style=for-the-badge&color=purple)](https://github.com/Malnati/pr-comment/releases)
 [![License](https://img.shields.io/github/license/Malnati/pr-comment?style=for-the-badge&color=blue)](LICENSE)
