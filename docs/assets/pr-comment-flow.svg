@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" role="img" aria-labelledby="title desc">
+  <title id="title">PR Comment Pro workflow</title>
+  <desc id="desc">Illustration of PR Comment Pro reading a template, injecting variables, and posting a sticky comment on a pull request.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#111827" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7" />
+      <stop offset="100%" stop-color="#6366f1" />
+    </linearGradient>
+    <linearGradient id="accent2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#22d3ee" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#000" flood-opacity="0.35" />
+    </filter>
+    <style>
+      text{font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; fill: #e5e7eb; font-size: 16px;}
+      .label{font-size:14px; fill:#cbd5e1;}
+      .subtitle{fill:#a5b4fc; font-size:14px; letter-spacing:0.4px;}
+      .muted{fill:#94a3b8; font-size:14px;}
+    </style>
+  </defs>
+  <rect width="960" height="460" rx="26" fill="url(#bg)" />
+  <rect x="26" y="26" width="908" height="408" rx="22" fill="#0b1020" stroke="#1f2937" stroke-width="2" />
+
+  <g transform="translate(52 54)">
+    <text class="subtitle" y="0">PR Comment Pro • Composite GitHub Action</text>
+    <text y="32" font-size="24" font-weight="700">Template-driven PR feedback with sticky updates</text>
+  </g>
+
+  <g transform="translate(80 120)">
+    <rect width="240" height="120" rx="16" fill="#111827" stroke="#1f2937" filter="url(#shadow)" />
+    <rect x="16" y="16" width="208" height="88" rx="12" fill="#0f172a" stroke="#1f2937" />
+    <text x="28" y="48" font-weight="700">Template file</text>
+    <text class="muted" x="28" y="74">.github/templates/review.md</text>
+    <text class="muted" x="28" y="96">Variables via env</text>
+  </g>
+
+  <g transform="translate(376 120)">
+    <rect width="220" height="120" rx="16" fill="#111827" stroke="#1f2937" filter="url(#shadow)" />
+    <rect x="14" y="14" width="192" height="92" rx="12" fill="#0f172a" stroke="#1f2937" />
+    <text x="30" y="50" font-weight="700">PR Comment Pro</text>
+    <text class="muted" x="30" y="78">Renders + injects message_id</text>
+    <text class="muted" x="30" y="100">Prepares JSON payload</text>
+  </g>
+
+  <g transform="translate(660 120)">
+    <rect width="220" height="120" rx="16" fill="#111827" stroke="#1f2937" filter="url(#shadow)" />
+    <rect x="14" y="14" width="192" height="92" rx="12" fill="#0f172a" stroke="#1f2937" />
+    <text x="28" y="52" font-weight="700">Pull Request</text>
+    <text class="muted" x="28" y="78">Sticky comment created</text>
+    <text class="muted" x="28" y="100">Updated when IDs match</text>
+  </g>
+
+  <g stroke="url(#accent2)" stroke-width="6" stroke-linecap="round" fill="none">
+    <path d="M320 180 H360" />
+    <path d="M596 180 H640" />
+  </g>
+  <g fill="none" stroke="#22d3ee" stroke-width="2" stroke-dasharray="6 10" opacity="0.7">
+    <path d="M320 200 C340 230, 356 230, 376 200" />
+    <path d="M596 200 C616 230, 632 230, 652 200" />
+  </g>
+  <g stroke="#1f2937" stroke-width="12" opacity="0.35">
+    <path d="M320 180 H360" />
+    <path d="M596 180 H640" />
+  </g>
+
+  <g transform="translate(120 280)">
+    <rect width="300" height="120" rx="18" fill="#111827" stroke="#1f2937" filter="url(#shadow)" />
+    <text x="24" y="48" font-weight="700">Sticky mode</text>
+    <text class="label" x="24" y="74">message_id keeps one comment up-to-date</text>
+    <text class="label" x="24" y="96">Safer retries • predictable comment URLs</text>
+  </g>
+
+  <g transform="translate(540 280)">
+    <rect width="300" height="120" rx="18" fill="#111827" stroke="#1f2937" filter="url(#shadow)" />
+    <text x="24" y="48" font-weight="700">Validation & payload prep</text>
+    <text class="label" x="24" y="74">Ensures token, PR number, and templates exist</text>
+    <text class="label" x="24" y="96">Packages body as JSON for GitHub API</text>
+  </g>
+
+  <circle cx="360" cy="180" r="9" fill="url(#accent)" />
+  <circle cx="596" cy="180" r="9" fill="url(#accent)" />
+  <circle cx="320" cy="180" r="9" fill="#0ea5e9" />
+  <circle cx="640" cy="180" r="9" fill="#0ea5e9" />
+</svg>

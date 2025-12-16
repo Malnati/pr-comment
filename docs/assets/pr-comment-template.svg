@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" role="img" aria-labelledby="title desc">
+  <title id="title">PR Comment Pro template pipeline</title>
+  <desc id="desc">Diagram showing template variables flowing into PR Comment Pro and publishing a formatted review comment.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#0b1020" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#ec4899" />
+    </linearGradient>
+    <style>
+      text{font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;fill:#e5e7eb;font-size:15px;}
+      .muted{fill:#cbd5e1;font-size:13px;}
+      .mono{font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace;font-size:13px;fill:#cbd5e1;}
+    </style>
+  </defs>
+  <rect width="960" height="360" rx="26" fill="url(#bg)" />
+  <g transform="translate(40 40)">
+    <rect width="280" height="280" rx="18" fill="#111827" stroke="#1f2937" />
+    <text x="18" y="34" font-weight="700">Markdown template</text>
+    <text class="muted" x="18" y="60">Supports ${VARIABLE} substitution</text>
+    <rect x="18" y="82" width="244" height="210" rx="14" fill="#0f172a" stroke="#1f2937" />
+    <text class="mono" x="34" y="112"># ${PR_TITLE}</text>
+    <text class="mono" x="34" y="138">Author: ${PR_AUTHOR}</text>
+    <text class="mono" x="34" y="164">Status: ${REVIEW_STATUS}</text>
+    <text class="mono" x="34" y="196">Notes:</text>
+    <text class="mono" x="34" y="222">- Tests: ${TEST_RESULT}</text>
+    <text class="mono" x="34" y="248">- Coverage: ${COVERAGE}%</text>
+  </g>
+  <g transform="translate(364 110)">
+    <rect width="230" height="140" rx="18" fill="#0f172a" stroke="#1f2937" />
+    <text x="20" y="38" font-weight="700">Variables</text>
+    <text class="muted" x="20" y="64">PR title, author, CI checks, etc.</text>
+    <text class="muted" x="20" y="88">Set via workflow env / matrix</text>
+  </g>
+  <g transform="translate(364 54)">
+    <polygon points="230,80 260,114 230,148" fill="url(#accent)" />
+  </g>
+  <g transform="translate(624 70)">
+    <rect width="280" height="220" rx="18" fill="#111827" stroke="#1f2937" />
+    <text x="18" y="32" font-weight="700">Published comment</text>
+    <text class="muted" x="18" y="58">Sticky when message_id is set</text>
+    <rect x="18" y="78" width="244" height="160" rx="14" fill="#0f172a" stroke="#1f2937" />
+    <text x="34" y="108" font-weight="700"># PR-142: Bump API client</text>
+    <text class="muted" x="34" y="136">Author: @octocat</text>
+    <text class="muted" x="34" y="160">Status: ✅ Ready for review</text>
+    <text class="muted" x="34" y="184">Tests: passed • Coverage: 92%</text>
+  </g>
+  <g stroke="#22d3ee" stroke-width="6" stroke-linecap="round" fill="none">
+    <path d="M320 180 H364" />
+    <path d="M594 180 H624" />
+  </g>
+  <circle cx="364" cy="180" r="9" fill="#22d3ee" />
+  <circle cx="624" cy="180" r="9" fill="#22d3ee" />
+</svg>

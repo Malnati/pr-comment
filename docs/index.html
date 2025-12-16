@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="theme-color" content="#0b1220" />
-    <title>Malnati/ops-literal</title>
+    <title>Malnati/PR Comment Pro</title>
     <meta
       name="description"
-      content="Export file content as safe, multiline-ready GitHub Actions outputs (without leaking logs)."
+      content="Post standardized, sticky Pull Request comments using Markdown templates and variable substitution."
     />
     <style>
       :root{
@@ -257,20 +257,20 @@
             <div class="logo" aria-hidden="true"></div>
             <div>
               <div style="font-size:14px;color:var(--muted);margin-bottom:2px">GitHub Action</div>
-              <div style="font-size:16px">Malnati/ops-literal</div>
+              <div style="font-size:16px">Malnati/PR Comment Pro</div>
             </div>
           </div>
 
           <nav class="nav" aria-label="Primary">
-            <a class="pill" href="https://github.com/Malnati/ops-literal" target="_blank" rel="noreferrer">
+            <a class="pill" href="https://github.com/Malnati/pr-comment" target="_blank" rel="noreferrer">
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2c5.523 0 10 4.477 10 10 0 4.418-2.865 8.165-6.839 9.489-.5.093-.682-.217-.682-.483 0-.237.009-.866.014-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.154-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.53 2.341 1.088 2.91.832.091-.647.349-1.089.635-1.34-2.22-.252-4.555-1.11-4.555-4.943 0-1.091.39-1.985 1.03-2.683-.103-.253-.446-1.27.098-2.646 0 0 .84-.269 2.75 1.026A9.564 9.564 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.295 2.748-1.026 2.748-1.026.546 1.376.203 2.393.1 2.646.64.698 1.028 1.592 1.028 2.683 0 3.842-2.338 4.687-4.566 4.935.359.309.679.919.679 1.852 0 1.337-.012 2.417-.012 2.747 0 .268-.18.58-.688.481C4.867 20.162 2 16.416 2 12 2 6.477 6.477 2 12 2Z" fill="currentColor" opacity=".92"/></svg>
               <span>Repository</span>
             </a>
-            <a class="pill" href="https://github.com/marketplace/actions/ops-literal" target="_blank" rel="noreferrer">
+            <a class="pill" href="https://github.com/marketplace/actions/pr-comment-pro" target="_blank" rel="noreferrer">
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 7.5a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-6a3 3 0 0 1-3-3v-9Z" stroke="currentColor" stroke-width="2" opacity=".92"/><path d="M9 9h8M9 12h8M9 15h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".92"/></svg>
               <span>Marketplace</span>
             </a>
-            <a class="pill" href="https://github.com/Malnati/ops-literal/blob/main/docs/README.md" target="_blank" rel="noreferrer">
+            <a class="pill" href="https://github.com/Malnati/pr-comment/blob/main/README.md" target="_blank" rel="noreferrer">
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" opacity=".92"/><path d="M9 7h6M9 11h6M9 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".92"/></svg>
               <span>Docs</span>
             </a>
@@ -283,29 +283,30 @@
       <section class="hero">
         <div class="hero-grid">
           <div class="card">
-            <h1>Safe “literal” outputs for GitHub Actions.</h1>
+            <h1>Standardize Pull Request comments with templates.</h1>
             <p>
-              <b>ops-literal</b> reads a file (or raw text) and exports it as a <b>multiline-ready output</b>
-              for downstream steps — designed to avoid accidental log leaks in IssueOps / PR automations.
+              <b>PR Comment Pro</b> renders Markdown templates, injects variables, and updates the same
+              sticky comment with a hidden <code>message_id</code>. Perfect for CI summaries, review checklists,
+              and automated approvals.
             </p>
 
             <div class="badges" aria-label="Highlights">
-              <span class="badge"><span class="dot" aria-hidden="true"></span>Multiline-safe outputs</span>
-              <span class="badge"><span class="dot" aria-hidden="true"></span>Optional truncation</span>
-              <span class="badge"><span class="dot" aria-hidden="true"></span>Hashing for traceability</span>
-              <span class="badge"><span class="dot" aria-hidden="true"></span>No content printed by default</span>
+              <span class="badge"><span class="dot" aria-hidden="true"></span>Sticky comments with message_id</span>
+              <span class="badge"><span class="dot" aria-hidden="true"></span>Templates with ${VARIABLE} substitution</span>
+              <span class="badge"><span class="dot" aria-hidden="true"></span>Validation for required inputs</span>
+              <span class="badge"><span class="dot" aria-hidden="true"></span>Composite action for speed</span>
             </div>
 
             <div class="cta">
-              <a class="btn primary" href="https://github.com/Malnati/ops-literal" target="_blank" rel="noreferrer">
+              <a class="btn primary" href="https://github.com/Malnati/pr-comment" target="_blank" rel="noreferrer">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2c5.523 0 10 4.477 10 10 0 4.418-2.865 8.165-6.839 9.489-.5.093-.682-.217-.682-.483 0-.237.009-.866.014-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.154-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.53 2.341 1.088 2.91.832.091-.647.349-1.089.635-1.34-2.22-.252-4.555-1.11-4.555-4.943 0-1.091.39-1.985 1.03-2.683-.103-.253-.446-1.27.098-2.646 0 0 .84-.269 2.75 1.026A9.564 9.564 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.295 2.748-1.026 2.748-1.026.546 1.376.203 2.393.1 2.646.64.698 1.028 1.592 1.028 2.683 0 3.842-2.338 4.687-4.566 4.935.359.309.679.919.679 1.852 0 1.337-.012 2.417-.012 2.747 0 .268-.18.58-.688.481C4.867 20.162 2 16.416 2 12 2 6.477 6.477 2 12 2Z" fill="currentColor" opacity=".92"/></svg>
                 <span>Open repository</span>
               </a>
-              <a class="btn" href="https://github.com/marketplace/actions/ops-literal" target="_blank" rel="noreferrer">
+              <a class="btn" href="https://github.com/marketplace/actions/pr-comment-pro" target="_blank" rel="noreferrer">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 7.5a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-6a3 3 0 0 1-3-3v-9Z" stroke="currentColor" stroke-width="2" opacity=".92"/><path d="M9 9h8M9 12h8M9 15h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".92"/></svg>
                 <span>View on Marketplace</span>
               </a>
-              <a class="btn" href="https://github.com/Malnati/ops-literal/blob/main/README.md" target="_blank" rel="noreferrer">
+              <a class="btn" href="https://github.com/Malnati/pr-comment/blob/main/README.md" target="_blank" rel="noreferrer">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" opacity=".92"/><path d="M9 7h6M9 11h6M9 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".92"/></svg>
                 <span>Read README</span>
               </a>
@@ -314,34 +315,34 @@
 
           <div class="hero-side">
             <aside class="card mini">
-              <h3>Built for automation flows</h3>
+              <h3>Purpose-built for review automation</h3>
               <p>
-                Move content safely across steps: PR bodies, timeline comments, job summaries, or action inputs.
+                Standardize PR feedback from CI: smoke-test summaries, coverage deltas, release notes, or deployment results.
               </p>
               <ul>
                 <li>
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  <span>Read from <b>path</b> or <b>text</b></span>
+                  <span>Read Markdown from <b>template_path</b></span>
                 </li>
                 <li>
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 1v22M1 12h22" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".55"/><path d="M7 12h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                  <span>Multiline export (Markdown/JSON ready)</span>
+                  <span>Inject any env variable with <b>${VARIABLE}</b></span>
                 </li>
                 <li>
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2 3 6.5V12c0 5 3.8 9.4 9 10 5.2-.6 9-5 9-10V6.5L12 2Z" stroke="currentColor" stroke-width="2"/></svg>
-                  <span>Designed to avoid content leaks by default</span>
+                  <span>Sticky ID keeps a single comment updated</span>
                 </li>
                 <li>
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h12M4 17h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                  <span>Optional truncation for predictable limits</span>
+                  <span>Validation for token, PR number, and file</span>
                 </li>
               </ul>
             </aside>
 
             <figure class="card image-card">
-              <img src="https://raw.githubusercontent.com/Malnati/ops-literal/91baaf5ebb4b92a9adaeeab36b7ecffac358fc3f/assets/ops-literal-whatisit-large.png" alt="Workflow summary showing ops-literal exporting a report as a reusable output." />
+              <img src="https://raw.githubusercontent.com/Malnati/pr-comment/main/docs/assets/pr-comment-flow.svg" alt="Workflow showing PR Comment Pro reading a template and posting a sticky pull request comment." />
               <figcaption class="image-caption">
-                Preview of a GitHub Actions run that publishes a sanitized report with <strong>ops-literal</strong>.
+                Preview of how <strong>PR Comment Pro</strong> reads templates, injects variables, and posts a sticky PR comment.
               </figcaption>
             </figure>
           </div>
@@ -354,31 +355,31 @@
             <div class="icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16v12H4V6Z" stroke="currentColor" stroke-width="2"/><path d="M7 9h10M7 12h10M7 15h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             </div>
-            <h3>Export file content as output</h3>
-            <p>Stop re-implementing “cat file → escape → export” in every workflow.</p>
+            <h3>Template-first comments</h3>
+            <p>Render Markdown files with <code>${VARIABLE}</code> substitution powered by <code>envsubst</code>.</p>
           </div>
 
           <div class="tile">
             <div class="icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7Z" stroke="currentColor" stroke-width="2"/><path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" fill="currentColor" opacity=".18"/></svg>
             </div>
-            <h3>Basename mode</h3>
-            <p>Need only the filename (without path) for templates or comments? Use <b>mode: basename</b>.</p>
+            <h3>Sticky updates</h3>
+            <p>Provide a <b>message_id</b> to update the same comment instead of spamming reviewers.</p>
           </div>
 
           <div class="tile">
             <div class="icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none"><path d="M20 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v2" stroke="currentColor" stroke-width="2"/><path d="M4 8h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z" stroke="currentColor" stroke-width="2"/><path d="M8 12h8M8 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             </div>
-            <h3>Hash mode</h3>
-            <p>Generate <b>sha256</b> for traceability and signatures without posting the full content.</p>
+            <h3>Validation guardrails</h3>
+            <p>Early checks for token, PR number, and template existence keep workflows predictable.</p>
           </div>
         </div>
 
         <figure class="card image-card" style="margin-top:16px">
-          <img src="https://raw.githubusercontent.com/Malnati/ops-literal/91baaf5ebb4b92a9adaeeab36b7ecffac358fc3f/assets/ops-literal-whatisit-large.png" alt="Illustration of what ops-literal exports as GitHub Actions outputs." />
+          <img src="https://raw.githubusercontent.com/Malnati/pr-comment/main/docs/assets/pr-comment-template.svg" alt="Illustration of PR Comment Pro converting templates and variables into pull request comments." />
           <figcaption class="image-caption">
-            Visual reference of the literal outputs: file content, basename-only exports, and sha256 hashes ready for reuse in workflows.
+            Visual reference of the templating flow and sticky updates for PR feedback.
           </figcaption>
         </figure>
 
@@ -386,37 +387,35 @@
           <div class="codecard">
             <div class="caption">
               <strong>Quick start</strong>
-              <span>export report content</span>
+              <span>post PR summary</span>
             </div>
-            <pre>- name: "📦 Export report as literal"
-  id: literal
-  uses: Malnati/ops-literal@v1
+            <pre>- name: "💬 Post PR Comment"
+  uses: Malnati/pr-comment@v8.0.2
   with:
-    path: .reports/20251215-1530_hardcode.json
-    max_bytes: 80000
-    output_name: report
-
-- name: "🧾 Use in Job Summary"
-  shell: bash
-  run: |
-    printf '%s\n' "${{ steps.literal.outputs.report }}" &gt;&gt; "$GITHUB_STEP_SUMMARY"</pre>
+    token: ${{ secrets.GITHUB_TOKEN }}
+    pr_number: ${{ github.event.pull_request.number }}
+    template_path: .github/templates/summary.md
+    message_id: ci-summary
+  env:
+    PR_TITLE: "${{ github.event.pull_request.title }}"
+    REVIEW_STATUS: "Pending checks"
+    COVERAGE: "92"
+</pre>
           </div>
 
           <div class="codecard">
             <div class="caption">
-              <strong>Basename</strong>
-              <span>filename only</span>
+              <strong>Sticky updates</strong>
+              <span>single comment target</span>
             </div>
-            <pre>- name: "📦 Export filename"
-  id: literal_name
-  uses: Malnati/ops-literal@v1
+            <pre>- name: "🔎 Find existing comment"
+  uses: Malnati/pr-comment@v8.0.2
   with:
-    path: .reports/20251215-1530_hardcode.json
-    output_name: filename
-    mode: basename
-
-- name: "🔎 Show filename"
-  run: echo "${{ steps.literal_name.outputs.filename }}"</pre>
+    token: ${{ secrets.GITHUB_TOKEN }}
+    pr_number: ${{ github.event.pull_request.number }}
+    template_path: .github/templates/review.md
+    message_id: review-gate
+</pre>
           </div>
         </div>
       </section>
@@ -427,15 +426,15 @@
             <div>
               <div style="font-weight:800;font-size:16px;margin-bottom:6px">Documentation</div>
               <div style="color:var(--muted);line-height:1.55">
-                Prefer reading docs outside GitHub Pages? Use the repository docs file.
+                Learn about inputs, sticky IDs, and templating tips directly from the repository README.
               </div>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap">
-              <a class="btn" href="https://github.com/Malnati/ops-literal/blob/main/docs/README.md" target="_blank" rel="noreferrer">
+              <a class="btn" href="https://github.com/Malnati/pr-comment/blob/main/README.md" target="_blank" rel="noreferrer">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" opacity=".92"/><path d="M9 7h6M9 11h6M9 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".92"/></svg>
                 <span>Open docs/README.md</span>
               </a>
-              <a class="btn" href="https://github.com/Malnati/ops-literal/issues" target="_blank" rel="noreferrer">
+              <a class="btn" href="https://github.com/Malnati/pr-comment/issues" target="_blank" rel="noreferrer">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" stroke="currentColor" stroke-width="2" opacity=".92"/><path d="M12 16h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M12 12V8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 <span>Open issues</span>
               </a>
@@ -447,17 +446,17 @@
       <footer class="footer">
         <div class="row">
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <img class="avatar" src="https://raw.githubusercontent.com/Malnati/ops-literal/91baaf5ebb4b92a9adaeeab36b7ecffac358fc3f/assets/ops-literal-avatar-original.jpeg" alt="ops-literal avatar" />
+            <img class="avatar" src="https://raw.githubusercontent.com/Malnati/pr-comment/main/docs/assets/pr-comment-avatar.svg" alt="PR Comment Pro avatar" />
             <div>
-              <div style="font-weight:800;color:var(--text)">Malnati/ops-literal</div>
-              <div style="margin-top:6px">© <span id="y"></span> • GitHub Action landing page</div>
+              <div style="font-weight:800;color:var(--text)">Malnati/pr-comment</div>
+              <div style="margin-top:6px">© <span id="y"></span> • PR Comment Pro</div>
               <div style="margin-top:6px">Maintained by Malnati</div>
             </div>
           </div>
           <div class="smalllinks" aria-label="Footer links">
-            <a href="https://github.com/Malnati/ops-literal" target="_blank" rel="noreferrer">Repository</a>
-            <a href="https://github.com/marketplace/actions/ops-literal" target="_blank" rel="noreferrer">Marketplace</a>
-            <a href="https://github.com/Malnati/ops-literal/blob/main/LICENSE" target="_blank" rel="noreferrer">License</a>
+            <a href="https://github.com/Malnati/pr-comment" target="_blank" rel="noreferrer">Repository</a>
+            <a href="https://github.com/marketplace/actions/pr-comment-pro" target="_blank" rel="noreferrer">Marketplace</a>
+            <a href="https://github.com/Malnati/pr-comment/blob/main/LICENSE" target="_blank" rel="noreferrer">License</a>
           </div>
         </div>
       </footer>
